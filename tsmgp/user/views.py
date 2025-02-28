@@ -6,7 +6,7 @@ from django.contrib import messages
 
 def login_register_view(request):
     """Display the login/registration page"""
-    return render(request, 'myapp/login_register.html')
+    return render(request, 'user/login_register.html')
 
 def login_view(request):
     """Handle user login"""
@@ -32,7 +32,7 @@ from django.contrib.auth.decorators import login_required
 @login_required
 def home_view(request):
     """Display the home page after successful login"""
-    return render(request, 'myapp/home.html')
+    return render(request, 'user/home.html')
 
 def register_view(request):
     """Handle user registration"""
