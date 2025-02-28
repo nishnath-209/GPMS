@@ -12,6 +12,10 @@ def base(request):
     """Display the base page"""
     return render(request, 'user/base.html')
 
+def login_before(request):
+    """Display the base page"""
+    return render(request, 'user/login_before.html')
+
 def login_view(request):
     """Handle user login"""
     if request.method == 'POST':
