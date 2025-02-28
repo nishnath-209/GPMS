@@ -8,6 +8,10 @@ def login_register_view(request):
     """Display the login/registration page"""
     return render(request, 'user/login_register.html')
 
+def base(request):
+    """Display the base page"""
+    return render(request, 'user/base.html')
+
 def login_view(request):
     """Handle user login"""
     if request.method == 'POST':

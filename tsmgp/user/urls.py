@@ -3,8 +3,9 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.login_register_view, name='login_register'),
+    path('', views.base, name='base'),
     path('login/', views.login_view, name='login'),
+    path('login_register/', views.login_register_view, name='login_register'),
     path('register/', views.register_view, name='register'),
     # Add your home/dashboard URL
     path('home/', views.home_view, name='home'),  # Create this view
