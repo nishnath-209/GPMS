@@ -62,8 +62,8 @@
                             <b>{{request.session.name}}</b>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#"><b>Profile</b></a></li>
-                            <li><a class="dropdown-item" href="#"><b>Logout</b></a></li>
+                            <li><a class="dropdown-item" href="{% url 'dashboard' %}"><b>Profile</b></a></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}"><b>Logout</b></a></li>
                         </ul>
                     </li>
                     {% else %}

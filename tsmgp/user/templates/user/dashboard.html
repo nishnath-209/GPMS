@@ -1,0 +1,277 @@
+{% extends 'user/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-section {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .profile-heading {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #343a40;
+        font-weight: bold;
+    }
+    
+    .profile-data {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .profile-item {
+        margin: 10px 20px;
+        min-width: 200px;
+    }
+    
+    .profile-label {
+        font-weight: bold;
+        color: #6c757d;
+    }
+    
+    .profile-value {
+        font-size: 1.1em;
+    }
+    
+    .data-section {
+        margin-bottom: 40px;
+    }
+    
+    .section-heading {
+        padding: 10px 15px;
+        background-color: #343a40;
+        color: white;
+        border-radius: 5px 5px 0 0;
+        margin-bottom: 0;
+    }
+    
+    .table-responsive {
+        border-radius: 0 0 5px 5px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .table th {
+        background-color: #e9ecef;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <!-- Page Heading -->
+    <h1 class="mb-4 text-center">Citizen Dashboard</h1>
+    
+    <!-- User Profile Section -->
+    <div class="profile-section">
+        <h2 class="profile-heading">User Profile</h2>
+        <div class="profile-data">
+            <div class="profile-item">
+                <div class="profile-label">Citizen ID</div>
+                <div class="profile-value">{{ user_id }}</div>
+            </div>
+            <div class="profile-item">
+                <div class="profile-label">Username</div>
+                <div class="profile-value">{{ username }}</div>
+            </div>
+            <div class="profile-item">
+                <div class="profile-label">Name</div>
+                <div class="profile-value">{{ name }}</div>
+            </div>
+            <div class="profile-item">
+                <div class="profile-label">Email</div>
+                <div class="profile-value">{{ email }}</div>
+            </div>
+            <div class="profile-item">
+                <div class="profile-label">Role</div>
+                <div class="profile-value">{{ role }}</div>
+            </div>
+            <div class="profile-item">
+                <div class="profile-label">Registered On</div>
+                <div class="profile-value">{{ created_at }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Complaints Section -->
+    {% if complaints %}
+    <div class="data-section">
+        <h3 class="section-heading">My Complaints</h3>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Description</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th>Filed On</th>
+                        <th>Last Updated</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for complaint in complaints %}
+                    <tr>
+                        <td>{{ complaint.id }}</td>
+                        <td>{{ complaint.description }}</td>
+                        <td>{{ complaint.category }}</td>
+                        <td>
+                            <span class="badge bg-{{ complaint.status_color }}">
+                                {{ complaint.status }}
+                            </span>
+                        </td>
+                        <td>{{ complaint.created_at }}</td>
+                        <td>{{ complaint.updated_at }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Family Members Section -->
+    {% if family_members %}
+    <div class="data-section">
+        <h3 class="section-heading">Family Members</h3>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Relation</th>
+                        <th>Age</th>
+                        <th>Gender</th>
+                        <th>Occupation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for member in family_members %}
+                    <tr>
+                        <td>{{ member.id }}</td>
+                        <td>{{ member.name }}</td>
+                        <td>{{ member.relation }}</td>
+                        <td>{{ member.age }}</td>
+                        <td>{{ member.gender }}</td>
+                        <td>{{ member.occupation }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Tax Payments Section -->
+    {% if tax_payments %}
+    <div class="data-section">
+        <h3 class="section-heading">Tax Payment History</h3>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tax Type</th>
+                        <th>Amount</th>
+                        <th>Payment Date</th>
+                        <th>Status</th>
+                        <th>Receipt Number</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in tax_payments %}
+                    <tr>
+                        <td>{{ payment.id }}</td>
+                        <td>{{ payment.tax_type }}</td>
+                        <td>₹{{ payment.amount }}</td>
+                        <td>{{ payment.payment_date }}</td>
+                        <td>
+                            <span class="badge bg-{{ payment.status_color }}">
+                                {{ payment.status }}
+                            </span>
+                        </td>
+                        <td>{{ payment.receipt_number }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Property Records Section -->
+    {% if properties %}
+    <div class="data-section">
+        <h3 class="section-heading">Property Records</h3>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Property Type</th>
+                        <th>Address</th>
+                        <th>Area (sq ft)</th>
+                        <th>Market Value</th>
+                        <th>Registered On</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for property in properties %}
+                    <tr>
+                        <td>{{ property.id }}</td>
+                        <td>{{ property.property_type }}</td>
+                        <td>{{ property.address }}</td>
+                        <td>{{ property.area }}</td>
+                        <td>₹{{ property.market_value }}</td>
+                        <td>{{ property.registered_date }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Schemes Section -->
+    {% if schemes %}
+    <div class="data-section">
+        <h3 class="section-heading">Enrolled Schemes</h3>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Scheme ID</th>
+                        <th>Scheme Name</th>
+                        <th>Enrollment Date</th>
+                        <th>Status</th>
+                        <th>Benefits</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for scheme in schemes %}
+                    <tr>
+                        <td>{{ scheme.id }}</td>
+                        <td>{{ scheme.name }}</td>
+                        <td>{{ scheme.enrollment_date }}</td>
+                        <td>
+                            <span class="badge bg-{{ scheme.status_color }}">
+                                {{ scheme.status }}
+                            </span>
+                        </td>
+                        <td>{{ scheme.benefits }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

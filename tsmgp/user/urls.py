@@ -10,7 +10,8 @@ urlpatterns = [
     path('register/', views.register_view, name='register'),
     path('citizen_home/', views.citizen_home, name='citizen_home'),
     path('government_monitors/', views.government_monitors, name='government_monitors'),
-
+    path('logout/', views.logout, name='logout'),
+    path('dashboard/',views.dashboard, name='dashboard'),
 ]
 
 

@@ -111,18 +111,30 @@ def login_view(request):
     
     return render(request, 'user/login_register.html')
 
-# def dashboard(request):
-#     # Check if user is logged in
-#     if 'user_id' not in request.session:
-#         return redirect('login')
+
+def logout(request):
+    """Handle user logout by clearing the session"""
+    # Clear all session data
+    request.session.flush()
     
-#     # Get user data from session
-#     context = {
-#         'user_id': request.session['user_id'],
-#         'username': request.session['username'],
-#         'email': request.session['email'],
-#         'name': request.session['name'],
-#         'role': request.session['role']
-#     }
+    # You can add a success message if you want
+    messages.success(request, 'You have been successfully logged out.')
     
-#     return render(request, 'dashboard.html', context)
+    # Redirect to the login page or home page
+    return redirect('login_before')  # Or any other page you want to redirect to
+
+def dashboard(request):
+    # Check if user is logged in
+    if 'user_id' not in request.session:
+        return redirect('login')
+    
+    # Get user data from session
+    context = {
+        'user_id': request.session['user_id'],
+        'username': request.session['username'],
+        'email': request.session['email'],
+        'name': request.session['name'],
+        'role': request.session['role']
+    }
+    
+    return render(request, 'user/dashboard.html', context)
