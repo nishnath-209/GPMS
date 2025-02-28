@@ -1,16 +1,18 @@
 # myapp/views.py
 from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login
-from django.contrib.auth.models import User
 from django.contrib import messages
+from django.db import connection
+from .models import users
+import hashlib
 
 def login_register_view(request):
     """Display the login/registration page"""
     return render(request, 'user/login_register.html')
 
 def login_before(request):
-    """Display the base page"""
-    return render(request, 'user/login_before.html')
+    """Display the page that should always show pre-login content"""
+    # Force this page to ignore login status
+    return render(request, 'user/login_before.html', {'ignore_login_status': True})
 
 
 def base(request):
@@ -22,24 +24,6 @@ def government_monitors(request):
     return render(request, 'user/government_monitors.html')
 
 
-
-def login_view(request):
-    """Handle user login"""
-    if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
-        user = authenticate(request, username=username, password=password)
-        
-        if user is not None:
-            login(request, user)
-            # Redirect to home page or dashboard
-            return redirect('home')
-        else:
-            messages.error(request, 'Invalid username or password')
-            return redirect('login_register')
-    
-    # If not POST, redirect to login/register page
-    return redirect('login_register')
 
 # Add this to your existing views.py file
 from django.contrib.auth.decorators import login_required
@@ -62,37 +46,71 @@ def register_view(request):
         if password != password_confirm:
             messages.error(request, 'Passwords do not match')
             return redirect('login_register')
-            
-        # Check if username exists
-        if User.objects.filter(username=username).exists():
-            messages.error(request, 'Username already exists')
-            return redirect('login_register')
-            
-        # Check if email exists
-        if User.objects.filter(email=email).exists():
-            messages.error(request, 'Email already exists')
-            return redirect('login_register')
-            
-        # Create user
-        user = User.objects.create_user(
-            username=username,
-            email=email,
-            password=password
-        )
-        
-        # Set first name if provided
-        if name:
-            name_parts = name.split()
-            if len(name_parts) > 0:
-                user.first_name = name_parts[0]
-            if len(name_parts) > 1:
-                user.last_name = ' '.join(name_parts[1:])
-            user.save()
-            
-        # Log in the user
-        login(request, user)
-        messages.success(request, 'Registration successful!')
-        return redirect('home')
+
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
+        # print("hi\n")
+
+        with connection.cursor() as cursor:
+            try:
+                # print("hi\n")
+                cursor.execute("""
+                    INSERT INTO users 
+                    (username, password, email, name, role) 
+                    VALUES (%s, %s, %s, %s, 'citizen')
+                """, [username, hashed_password, email, name])
+                # print("hi\n")
+                messages.success(request, 'Registration successful! Please login.')
+                return redirect('login_register')
+            except Exception as e:
+                messages.error(request, f'Registration failed: {str(e)}')
         
     # If not POST, redirect to login/register page
-    return redirect('login_register')
+    return render(request,'user/login_register.html')
+
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        
+        # Hash the password
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
+        
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT id, username, email, name, role, created_at 
+                FROM users 
+                WHERE username = %s AND password = %s
+            """, [username, hashed_password])
+            
+            user = cursor.fetchone()
+            
+            if user:
+                # Store user info in session
+                request.session['user_id'] = user[0]
+                request.session['username'] = user[1]
+                request.session['email'] = user[2]
+                request.session['name'] = user[3]
+                request.session['role'] = user[4]
+                
+                return redirect('base')  # Go to dashboard page
+            else:
+                messages.error(request, 'Wrong username or password')
+                return redirect('login_register')
+    
+    return render(request, 'user/login_register.html')
+
+# def dashboard(request):
+#     # Check if user is logged in
+#     if 'user_id' not in request.session:
+#         return redirect('login')
+    
+#     # Get user data from session
+#     context = {
+#         'user_id': request.session['user_id'],
+#         'username': request.session['username'],
+#         'email': request.session['email'],
+#         'name': request.session['name'],
+#         'role': request.session['role']
+#     }
+    
+#     return render(request, 'dashboard.html', context)
