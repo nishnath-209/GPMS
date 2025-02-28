@@ -4,7 +4,7 @@
 <div class="dashboard">
     <h1 style="text-align: center; font-weight: 600;"><b>User Profile</b></h1>
     
-    <div style="text-align: center; width: 80%; margin: 0 auto; border: 1px solid #ddd; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
+    <div style="text-align: center; width: 50%; margin: 0 auto; border: 1px solid #ddd; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
         <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
             <span style="font-weight: bold;">Citizen ID:</span>
             <span>{{user_id}}</span>
@@ -28,4 +28,164 @@
     </div>
     
 </div>
+
+<div class="dashboard">
+    <h1 style="text-align: center; margin: 0 auto; font-weight: 600;">Tax Records</h1>
+
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0; border: 1px solid #ddd;">
+        <thead>
+            <tr style="background-color: #f5f5f5;">
+                <th style="padding: 12px; border: 1px solid #ddd;">Tax Type</th>
+                <th style="padding: 12px; border: 1px solid #ddd;">Amount</th>
+                <th style="padding: 12px; border: 1px solid #ddd;">Due Date</th>
+                <th style="padding: 12px; border: 1px solid #ddd;">Payment Date</th>
+                <th style="padding: 12px; border: 1px solid #ddd;">Status</th>
+                <th style="padding: 12px; border: 1px solid #ddd;">Payment Method</th>
+            </tr>
+        </thead>
+        <tbody>
+             <!-- for loop here -->
+            <tr>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{tax_type}}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{amount}}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{due_date}}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{payment_date}}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{payment_status}}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{payment_method}}</td>
+            </tr>
+            <!-- empty -->
+            <tr>
+                <td colspan="6" style="padding: 12px; text-align: center; border: 1px solid #ddd;">
+                    No tax records found
+                </td>
+            </tr>
+            <!-- end for here -->
+        </tbody>
+    </table>
+</div>
+
+<div class="dashboard">
+    <h1 style="text-align: center; margin: 0 auto; font-weight: 600;">Certificates</h1>
+
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0; border: 1px solid #ddd;">
+        <thead>
+            <tr style="background-color: #f5f5f5;">
+                <th style="padding: 12px; border: 1px solid #ddd;">Certificate Type</th>
+                <th style="padding: 12px; border: 1px solid #ddd;">Issue Date</th>
+                <th style="padding: 12px; border: 1px solid #ddd;">Owned Until</th>
+            </tr>
+        </thead>
+        <tbody>
+             <!-- for loop here -->
+            <tr>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{certificate_type}}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{issue_date}}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{owned_until}}</td>
+            </tr>
+            <!-- empty -->
+            <tr>
+                <td colspan="6" style="padding: 12px; text-align: center; border: 1px solid #ddd;">
+                    No certificates found
+                </td>
+            </tr>
+            <!-- end for here -->
+        </tbody>
+    </table>
+</div>
+
+<div class="dashboard">
+    <h1 style="text-align: center; margin: 0 auto; font-weight: 600;">Property Records</h1>
+
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0; border: 1px solid #ddd;">
+        <thead>
+            <tr style="background-color: #f5f5f5;">
+                <th style="padding: 12px; border: 1px solid #ddd;">Property</th>
+                <th style="padding: 12px; border: 1px solid #ddd;">Type</th>
+                <th style="padding: 12px; border: 1px solid #ddd;">Area (sqft)</th>
+                <th style="padding: 12px; border: 1px solid #ddd;">Survey No.</th>
+                <th style="padding: 12px; border: 1px solid #ddd;">Registration Date</th>
+                <th style="padding: 12px; border: 1px solid #ddd;">Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for property in property_records %}
+            <tr>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{property.name}}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{property.property_type}}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{property.area}} sqft</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{property.survey_num}}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{property.registration_date}}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">₹{{property.value}}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="padding: 12px; text-align: center; border: 1px solid #ddd;">
+                    No property records found
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="dashboard">
+    <h1 style="text-align: center; margin: 0 auto; font-weight: 600;">Government Schemes</h1>
+
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0; border: 1px solid #ddd;">
+        <thead>
+            <tr style="background-color: #f5f5f5;">
+                <th style="padding: 12px; border: 1px solid #ddd;">Scheme Name</th>
+                <th style="padding: 12px; border: 1px solid #ddd;">Start Date</th>
+                <th style="padding: 12px; border: 1px solid #ddd;">End Date</th>
+                <th style="padding: 12px; border: 1px solid #ddd;">Eligibility Criteria</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for scheme in schemes %}
+            <tr>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{scheme.name}}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{scheme.start_date|date:"Y-m-d"}}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{scheme.end_date|date:"Y-m-d"}}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{scheme.criteria}}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="padding: 12px; text-align: center; border: 1px solid #ddd;">
+                    No active schemes available
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="dashboard">
+    <h1 style="text-align: center; margin: 0 auto; font-weight: 600;">Complaint Records</h1>
+
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0; border: 1px solid #ddd;">
+        <thead>
+            <tr style="background-color: #f5f5f5;">
+                <th style="padding: 12px; border: 1px solid #ddd;">Description</th>
+                <th style="padding: 12px; border: 1px solid #ddd;">Type</th>
+                <th style="padding: 12px; border: 1px solid #ddd;">Date Filed</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for complaint in complaints %}
+            <tr>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{complaint.description}}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{complaint.get_complaint_type_display}}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{complaint.complaint_date|date:"M d, Y"}}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" style="padding: 12px; text-align: center; border: 1px solid #ddd;">
+                    No complaints registered
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
 {% endblock %}
