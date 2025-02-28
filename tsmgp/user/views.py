@@ -23,6 +23,11 @@ def government_monitors(request):
     """Display the Government monitors base page"""
     return render(request, 'user/government_monitors.html')
 
+def citizen_home(request):
+    """Display the Government monitors base page"""
+    return render(request, 'user/citizen_home.html')
+
+
 
 
 # Add this to your existing views.py file
@@ -92,7 +97,14 @@ def login_view(request):
                 request.session['name'] = user[3]
                 request.session['role'] = user[4]
                 
-                return redirect('base')  # Go to dashboard page
+                if user[4] == 'citizen':
+                    return redirect('citizen_home')
+                elif user[4] == 'gm':
+                    return redirect('government_monitors')
+                elif user[4] == 'admin':
+                    return redirect('admin')
+                else:
+                    return redirect('employee_home')  # Go to dashboard page
             else:
                 messages.error(request, 'Wrong username or password')
                 return redirect('login_register')
