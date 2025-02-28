@@ -3,8 +3,9 @@
 {% block content %}
 <div class="dashboard">
     <h1 style="text-align: center; font-weight: 600;"><b>User Profile</b></h1>
-    
-    <div style="text-align: center; width: 50%; margin: 0 auto; border: 1px solid #ddd; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
+
+    <div
+        style="text-align: center; width: 40%; margin: 0 auto; border: 1px solid #ddd; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
         <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
             <span style="font-weight: bold;">Citizen ID:</span>
             <span>{{user_id}}</span>
@@ -26,7 +27,7 @@
             <span>{{role}}</span>
         </div>
     </div>
-    
+
 </div>
 
 <div class="dashboard">
@@ -44,25 +45,35 @@
             </tr>
         </thead>
         <tbody>
-             <!-- for loop here -->
+            {% for tax in tax_records %}
             <tr>
-                <td style="padding: 12px; border: 1px solid #ddd;">{{tax_type}}</td>
-                <td style="padding: 12px; border: 1px solid #ddd;">{{amount}}</td>
-                <td style="padding: 12px; border: 1px solid #ddd;">{{due_date}}</td>
-                <td style="padding: 12px; border: 1px solid #ddd;">{{payment_date}}</td>
-                <td style="padding: 12px; border: 1px solid #ddd;">{{payment_status}}</td>
-                <td style="padding: 12px; border: 1px solid #ddd;">{{payment_method}}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{tax.tax_type}}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">₹{{tax.amount}}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{tax.due_date|date:"M d, Y"}}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">
+                    {% if tax.payment_date %}
+                    {{tax.payment_date|date:"M d, Y"}}
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                <td
+                    style="padding: 12px; border: 1px solid #ddd; color: #ddd;"></td>
+                    {{ tax.get_payment_status_display }}
+                </td>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{tax.payment_method|default:"-"}}</td>
             </tr>
-            <!-- empty -->
+            {% empty %}
             <tr>
                 <td colspan="6" style="padding: 12px; text-align: center; border: 1px solid #ddd;">
-                    No tax records found
+                    No tax records available
                 </td>
             </tr>
-            <!-- end for here -->
+            {% endfor %}
         </tbody>
     </table>
 </div>
+
 
 <div class="dashboard">
     <h1 style="text-align: center; margin: 0 auto; font-weight: 600;">Certificates</h1>
@@ -72,26 +83,27 @@
             <tr style="background-color: #f5f5f5;">
                 <th style="padding: 12px; border: 1px solid #ddd;">Certificate Type</th>
                 <th style="padding: 12px; border: 1px solid #ddd;">Issue Date</th>
-                <th style="padding: 12px; border: 1px solid #ddd;">Owned Until</th>
+                <th style="padding: 12px; border: 1px solid #ddd;">Valid Until</th>
             </tr>
         </thead>
         <tbody>
-             <!-- for loop here -->
+            {% for certificate in certificates %}
             <tr>
-                <td style="padding: 12px; border: 1px solid #ddd;">{{certificate_type}}</td>
-                <td style="padding: 12px; border: 1px solid #ddd;">{{issue_date}}</td>
-                <td style="padding: 12px; border: 1px solid #ddd;">{{owned_until}}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{certificate.certificate_type}}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{certificate.issue_date|date:"Y-m-d"}}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{certificate.valid_until|date:"Y-m-d"}}</td>
             </tr>
-            <!-- empty -->
+            {% empty %}
             <tr>
-                <td colspan="6" style="padding: 12px; text-align: center; border: 1px solid #ddd;">
-                    No certificates found
+                <td colspan="3" style="padding: 12px; text-align: center; border: 1px solid #ddd;">
+                    No certificates issued
                 </td>
             </tr>
-            <!-- end for here -->
+            {% endfor %}
         </tbody>
     </table>
 </div>
+
 
 <div class="dashboard">
     <h1 style="text-align: center; margin: 0 auto; font-weight: 600;">Property Records</h1>
