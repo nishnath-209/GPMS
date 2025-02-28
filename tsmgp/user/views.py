@@ -134,7 +134,7 @@ def dashboard(request):
         'username': request.session['username'],
         'email': request.session['email'],
         'name': request.session['name'],
-        'role': request.session['role']
+        'role': request.session['role'],
     }
     
     return render(request, 'user/dashboard.html', context)
