@@ -36,39 +36,39 @@
 
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <nav class="navbar navbar-expand-lg navbar-light bg-dark" >
         <div class="container">
-            <a class="navbar-brand" href="#">MySite</a>
+            <a class="navbar-brand" href="#" style="color: white; "><b>TSMGP</b></a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Home</a>
+                        <a class="nav-link" href="#" style="color: white;"><b>Home</b></a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">About</a>
+                        <a class="nav-link" href="#" style="color: white;"><b>About</b></a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Contact</a>
+                        <a class="nav-link" href="#" style="color: white;"><b>Contact</b></a>
                     </li>
                 </ul>
 
                 <div class="navbar-nav">
                     {% if user.is_authenticated %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            My Account
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" style="color: white;">
+                            <b>My account</b>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#">My Profile</a></li>
-                            <li><a class="dropdown-item" href="#">Logout</a></li>
+                            <li><a class="dropdown-item" href="#" style="color: white;"><b>Profile</b></a></li>
+                            <li><a class="dropdown-item" href="#" style="color: white;"><b>Logout</b></li>
                         </ul>
                     </li>
                     {% else %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'login_register' %}">Login/Register</a>
+                        <a class="nav-link" href="{% url 'login_register' %}" style="color: white;"><b>Login/Register</b></a>
                     </li>
                     {% endif %}
                 </div>
@@ -94,9 +94,55 @@
     </div>
 
     <!-- Simple Footer -->
-    <footer class="py-3 bg-dark mt-4">
-        <div class="container text-center">
-            <p class="text-light">&copy; {% now "Y" %} My Django Site</p>
+    <footer class="py-4 bg-dark mt-4">
+        <div class="container">
+            <div class="row justify-content-between">
+                <!-- Contact Information -->
+                <div class="col-md-4 text-center text-md-start mb-4 mb-md-0">
+                    <h5 class="text-light mb-3">Gram Panchayat Office</h5>
+                    <p class="text-light mb-2">
+                        <i class="fas fa-phone-alt me-2"></i> Phone: +91 1234567890
+                    </p>
+                    <p class="text-light mb-2">
+                        <i class="fas fa-envelope me-2"></i> Email: contact@grampanchayat.gov.in
+                    </p>
+                    <p class="text-light mb-2">
+                        <i class="fas fa-map-marker-alt me-2"></i> Address: Gram Panchayat Building, Village Center
+                    </p>
+                </div>
+
+                <!-- Social Media Links -->
+                <div class="col-md-4 text-center">
+                    <h5 class="text-light mb-3">Connect With Us</h5>
+                    <div class="social-links mb-3" style="margin-top: 15px;">
+                        <a href="https://www.facebook.com" target="_blank" class="mx-2">
+                            <img src="{% static 'user/images/facebook.png' %}" alt="Facebook" 
+                                 style="width: 30px; height: 30px;">
+                        </a>
+                        <a href="https://www.youtube.com" target="_blank" class="mx-2">
+                            <img src="{% static 'user/images/youtube.webp' %}" alt="YouTube" 
+                                 style="width: 30px; height: 30px;">
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Office Hours -->
+                <div class="col-md-4 text-center mb-4 mb-md-0">
+                    <h5 class="text-light mb-3">Office Hours</h5>
+                    <p class="text-light mb-2">Monday - Friday: 9:00 AM - 5:00 PM</p>
+                    <p class="text-light mb-2">Saturday: 9:00 AM - 1:00 PM</p>
+                    <p class="text-light mb-2">Sunday: Closed</p>
+                </div>
+                
+                
+            </div>
+            
+            <hr class="bg-secondary my-2">
+            
+            <!-- Copyright Notice -->
+            <div class="text-center text-light">
+                <p class="mb-0">&copy; {% now "Y" %} TSM Gram Panchayat. All Rights Reserved.</p>
+            </div>
         </div>
     </footer>
 

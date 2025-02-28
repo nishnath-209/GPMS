@@ -8,13 +8,20 @@ def login_register_view(request):
     """Display the login/registration page"""
     return render(request, 'user/login_register.html')
 
+def login_before(request):
+    """Display the base page"""
+    return render(request, 'user/login_before.html')
+
+
 def base(request):
     """Display the base page"""
     return render(request, 'user/base.html')
 
-def login_before(request):
-    """Display the base page"""
-    return render(request, 'user/login_before.html')
+def government_monitors(request):
+    """Display the Government monitors base page"""
+    return render(request, 'user/government_monitors.html')
+
+
 
 def login_view(request):
     """Handle user login"""
