@@ -130,16 +130,16 @@ def login_view(request):
                 request.session['email'] = user[2]
                 request.session['phone'] = user[3]
                 request.session['role'] = user[4]
-                return redirect('home')
+                # return redirect('home')
                 
-                # if user[4] == 'citizen':
-                #     return redirect('citizen_home')
-                # elif user[4] == 'gm':
-                #     return redirect('government_monitors')
-                # elif user[4] == 'admin':
-                #     return redirect('admin')
-                # else:
-                #     return redirect('employee_home')  # Go to dashboard page
+                if user[4] == 'citizen':
+                    return redirect('citizen_home')
+                elif user[4] == 'gm':
+                    return redirect('government_monitors')
+                elif user[4] == 'admin':
+                    return redirect('admin_home')
+                else:
+                    return redirect('employee_home')  # Go to dashboard page
             else:
                 messages.error(request, 'Wrong username or password')
                 return redirect('login_register')
