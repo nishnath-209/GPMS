@@ -59,6 +59,19 @@
                     <li class="nav-item">
                         <a class="nav-link scroll-link" href="#contact-section" style="color: white;"><b>Contact</b></a>
                     </li>
+
+
+                    {% if request.session.role == "citizen" %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'view_village_info' request.session.user_id %}" style="color: white;">
+                                <b>View Village info</b>
+                            </a>
+                        </li>
+                        
+                {% endif %}
+
+
+                
                 </ul>
 
                 <div class="navbar-nav">
