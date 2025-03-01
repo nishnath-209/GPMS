@@ -499,3 +499,85 @@ def citizen_admin(request):
             })
         context['citizens'] = citizens
     return render(request,'user/citizen_admin.html',context)
+
+def employee_home(request):
+    return render(request,'user/employee_home.html')
+
+
+# Add this to your existing views.py file (keep all existing code)
+
+def employee_query(request):
+    """Handle database queries from employees"""
+    context = {
+        'query_executed': False,
+        'query_results': None,
+        'column_names': None,
+        'error_message': None
+    }
+    
+    # Check if user is logged in and is an employee
+    if 'user_id' not in request.session or request.session.get('role') != 'employee':
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('login_register')
+    
+    if request.method == 'POST':
+        table_selection = request.POST.get('table_selection')
+        filter_field = request.POST.get('filter_field')
+        filter_value = request.POST.get('filter_value')
+        limit = int(request.POST.get('limit', 100))
+        
+        # Validate limit to prevent excessive data queries
+        if limit < 1:
+            limit = 1
+        elif limit > 1000:
+            limit = 1000
+            
+        # Define allowed tables and their fields for security
+        allowed_tables = {
+            'citizen': ['citizen_id', 'user_id', 'village_id', 'name', 'house_number', 'aadhar_number', 'date_of_birth', 'gender', 'occupation'],
+            'village': ['village_id', 'village_name', 'district', 'state', 'pincode', 'population'],
+            'tax_record': ['tax_id', 'citizen_id', 'tax_type', 'amount', 'due_date', 'payment_date', 'payment_status', 'payment_method'],
+            'certificate': ['certificate_id', 'citizen_id', 'certificate_type', 'issue_date', 'valid_until'],
+            'property': ['property_id', 'citizen_id', 'address', 'property_type', 'area', 'survey_number', 'registry_date', 'value'],
+            'complaint': ['complaint_id', 'citizen_id', 'complaint_type', 'description', 'complaint_date', 'status'],
+            'scheme': ['scheme_id', 'scheme_name', 'start_date', 'end_date', 'criteria', 'benefits']
+        }
+        
+        # Validate inputs
+        if table_selection not in allowed_tables:
+            context['error_message'] = "Invalid table selection"
+            return render(request, 'user/employee_query.html', context)
+            
+        if filter_field and filter_field not in allowed_tables[table_selection]:
+            context['error_message'] = "Invalid filter field"
+            return render(request, 'user/employee_query.html', context)
+            
+        try:
+            with connection.cursor() as cursor:
+                # Construct query safely (avoiding SQL injection)
+                query = f"SELECT * FROM {table_selection}"
+                params = []
+                
+                if filter_field and filter_value:
+                    query += f" WHERE {filter_field} = %s"
+                    params.append(filter_value)
+                    
+                query += f" LIMIT {limit}"
+                
+                # Execute query
+                cursor.execute(query, params)
+                
+                # Get column names
+                column_names = [col[0] for col in cursor.description]
+                
+                # Fetch results
+                results = cursor.fetchall()
+                
+                context['query_executed'] = True
+                context['query_results'] = results
+                context['column_names'] = column_names
+                
+        except Exception as e:
+            context['error_message'] = f"Query error: {str(e)}"
+            
+    return render(request, 'user/employee_query.html', context)
