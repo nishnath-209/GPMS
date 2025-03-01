@@ -150,10 +150,10 @@ def home_view(request):
     elif request.session['role'] == 'gm':
         return redirect('government_monitors')
     elif request.session['role'] == 'admin':
-        return redirect('admin')
+        return redirect('update_user_roles')
     else:
         return redirect('employee_home')
-
+    
 
 def logout(request):
     """Handle user logout by clearing the session"""
@@ -298,6 +298,51 @@ def dashboard(request):
         context['schemes'] = schemes
     
     return render(request, 'user/dashboard.html', context)
+
+def update_user_roles(request):
+    context = {'users': []}
+    
+    if request.method == 'POST':
+        # Iterate over all POST keys to find role updates
+        for key in request.POST:
+            if key.startswith('role_'):
+                user_id = key.split('_')[1]
+                new_role = request.POST.get(key)
+                
+                # Update user role
+                with connection.cursor() as cursor:
+                    cursor.execute("""
+                        UPDATE users
+                        SET role = %s
+                        WHERE user_id = %s
+                    """, [new_role, user_id])
+        
+        messages.success(request, "Roles updated successfully")
+        return redirect('update_user_roles')
+
+        # GET request handling
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT user_id, username, email, phone, role
+            FROM users
+            ORDER BY user_id
+        """)
+        users = []
+        for row in cursor.fetchall():
+            users.append({
+                'user_id': row[0],
+                'username': row[1],
+                'email': row[2],
+                'phone': row[3],
+                'role': row[4]
+            })
+        context['users'] = users
+        context['roles'] = ['citizen', 'admin', 'employee', 'government_monitor']
+        
+    return render(request, 'user/update_user_roles.html', context)
+
+def admin_home(request):
+    return render(request, 'user/admin_home.html')
 
 # New function to handle profile updates
 def update_profile(request):
