@@ -2,7 +2,10 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.db import connection
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from .models import users
+import datetime
 import hashlib
 
 def login_register_view(request):
@@ -52,13 +55,10 @@ def register_view(request):
         date_of_birth = request.POST.get('date_of_birth')
         gender = request.POST.get('gender')
         occupation = request.POST.get('occupation')
-        house_number = request.POST.get('house_number')  # New field for house number
+        house_number = request.POST.get('house_number')
 
-        # Village details (from form)
-        village_name = request.POST.get('village_name')
-        district = request.POST.get('district')
-        state = request.POST.get('state')
-        pincode = request.POST.get('pincode')
+        # **Fetch village_id directly from the form**
+        village_id = request.POST.get('village_id')
 
         # Validate password
         if password != password_confirm:
@@ -67,25 +67,16 @@ def register_view(request):
 
         with connection.cursor() as cursor:
             try:
-                # Fetch village_id
-                cursor.execute("""
-                    SELECT village_id FROM village WHERE village_name = %s AND district = %s AND state = %s AND pincode = %s
-                """, [village_name, district, state, pincode])
-
-                village = cursor.fetchone()
-                if village:
-                    village_id = village[0]  # Existing village_id
-
-                # Step 1: Insert into users table
+                # **Step 1: Insert into users table**
                 cursor.execute("""
                     INSERT INTO users (username, password, email, phone, role, registration_date) 
                     VALUES (%s, %s, %s, %s, 'citizen', NOW()) RETURNING user_id
                 """, [username, password, email, phone])
 
                 user_id = cursor.fetchone()[0]
-                print("User ID:", user_id)
+                
 
-                # Step 2: Insert into citizen table 
+                # **Step 2: Insert into citizen table**
                 cursor.execute("""
                     INSERT INTO citizen (user_id, village_id, name, house_number, aadhar_number, date_of_birth, gender, occupation) 
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
@@ -99,6 +90,7 @@ def register_view(request):
                 print("Error:", e)
 
     return render(request, 'user/login_register.html')
+
 
 
 
@@ -118,6 +110,18 @@ def login_view(request):
             """, [username, password])
             
             user = cursor.fetchone()
+
+            # Fetch citizen details using the user_id
+            cursor.execute("""
+                SELECT * FROM citizen WHERE user_id = %s
+            """, [user[0]])
+            
+            #citizen = cursor.fetchone()
+            cursor.execute("SELECT * FROM citizen WHERE user_id = %s", [user[0]])
+            citizen = cursor.fetchone()
+            if citizen:
+                request.session["citizen_id"] = citizen[0]  # Store citizen_id
+
             
             if user:
                 # Store user info in session
@@ -270,7 +274,7 @@ def dashboard(request):
             
             # Get complaints
             cursor.execute("""
-                SELECT description, complaint_type, complaint_date
+                SELECT complaint_id, description, complaint_type, complaint_date
                 FROM COMPLAINT
                 WHERE citizen_id = %s
                 ORDER BY complaint_date DESC
@@ -279,10 +283,10 @@ def dashboard(request):
             columns = [col[0] for col in cursor.description]
             for row in cursor.fetchall():
                 complaint_dict = dict(zip(columns, row))
-                # Add this method-like attribute to match template's get_complaint_type_display
-                complaint_dict['get_complaint_type_display'] = complaint_dict['complaint_type']
+                complaint_dict["get_complaint_type_display"] = complaint_dict["complaint_type"]
                 complaints.append(complaint_dict)
-            context['complaints'] = complaints
+
+        context['complaints'] = complaints
         
         # Get schemes (available to all users regardless of citizen status)
         cursor.execute("""
@@ -334,3 +338,141 @@ def update_profile(request):
                 messages.error(request, f"Error updating profile: {str(e)}")
     
     return redirect('dashboard')
+
+def add_complaint(request):
+    """Handle adding a new complaint."""
+    if request.method == "POST":
+        citizen_id = request.session.get("citizen_id")
+        if not citizen_id:
+            return redirect("login")
+
+        complaint_type = request.POST.get("complaint_type")
+        description = request.POST.get("description")
+        complaint_date = datetime.date.today()
+
+        #print(f"Adding complaint: {complaint_type}, {description}, {complaint_date}")
+
+        # Insert the new complaint
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO COMPLAINT (citizen_id, complaint_type, description, complaint_date)
+                VALUES (%s, %s, %s, %s)
+            """, [citizen_id, complaint_type, description, complaint_date])
+
+        return redirect("dashboard")
+
+
+@csrf_exempt
+def remove_complaint(request):
+    """Handle removing a complaint."""
+    if request.method == "POST":
+        complaint_id = request.POST.get("complaint_id")
+
+        # Delete the complaint
+        with connection.cursor() as cursor:
+            cursor.execute("DELETE FROM COMPLAINT WHERE complaint_id = %s", [complaint_id])
+
+        return JsonResponse({"success": True})
+
+    return JsonResponse({"success": False}, status=400)
+
+
+
+
+
+
+def view_village_info(request, user_id):
+    with connection.cursor() as cursor:
+        # Get citizen_id and village_id
+        cursor.execute("""
+            SELECT citizen_id, village_id
+            FROM CITIZEN
+            WHERE user_id = %s
+        """, [user_id])
+        result = cursor.fetchone()
+
+        if not result:
+            return JsonResponse({"error": "Citizen not found for user"}, status=400)
+
+        citizen_id, village_id = result
+
+        # Retrieve educational records
+        cursor.execute("""
+            SELECT schools, colleges, students, teachers, literacy_rate, record_date
+            FROM education_record
+            WHERE village_id = %s
+            ORDER BY record_date DESC
+        """, [village_id])
+
+        columns = [col[0] for col in cursor.description]
+        education_data = [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+        # Retrieve agricultural records
+        cursor.execute("""
+            SELECT total_agricultural_land, irrigated_land, major_crops, farmers_count, subsidy_amount, record_date
+            FROM agriculture_record
+            WHERE village_id = %s
+            ORDER BY record_date DESC
+        """, [village_id])
+
+        columns = [col[0] for col in cursor.description]
+        agriculture_data = [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+        # Retrieve health records
+        cursor.execute("""
+            SELECT healthcare_facilities, doctors, nurses, beds, patients_treated, vaccination_count, record_date
+            FROM HEALTH_RECORD
+            WHERE village_id = %s
+            ORDER BY record_date DESC
+        """, [village_id])
+
+        columns = [col[0] for col in cursor.description]
+        health_data = [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+    return render(request, 'user/village_info.html', {'education_data': education_data, 'agriculture_data' : agriculture_data, 'health_data' : health_data})
+
+def update_user_roles(request):
+    context = {'users': []}
+    
+    if request.method == 'POST':
+        # Iterate over all POST keys to find role updates
+        for key in request.POST:
+            if key.startswith('role_'):
+                user_id = key.split('_')[1]
+                new_role = request.POST.get(key)
+                
+                # Update user role
+                with connection.cursor() as cursor:
+                    cursor.execute("""
+                        UPDATE users
+                        SET role = %s
+                        WHERE user_id = %s
+                    """, [new_role, user_id])
+        
+        messages.success(request, "Roles updated successfully")
+        return redirect('update_user_roles')
+
+        # GET request handling
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT user_id, username, email, phone, role
+            FROM users
+            ORDER BY user_id
+        """)
+        users = []
+        for row in cursor.fetchall():
+            users.append({
+                'user_id': row[0],
+                'username': row[1],
+                'email': row[2],
+                'phone': row[3],
+                'role': row[4]
+            })
+        context['users'] = users
+        context['roles'] = ['citizen', 'admin', 'employee', 'government_monitor']
+        
+    return render(request, 'user/update_user_roles.html', context)
+
+def admin_home(request):
+    return render(request, 'user/admin_home.html')
+

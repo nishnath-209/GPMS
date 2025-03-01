@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Buttons Collection</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #4f46e5;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #eab308;
+            --dark: #1e293b;
+        }
+
+        .btn-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .btn {
+            font-family: 'Segoe UI', sans-serif;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Sizes */
+        .btn-md {
+            padding: 12px 24px;
+            font-size: 16px;
+        }
+
+        .btn-lg {
+            padding: 16px 32px;
+            font-size: 18px;
+        }
+
+        .btn-xl {
+            padding: 20px 40px;
+            font-size: 20px;
+        }
+
+        .btn-hg {
+            padding: 24px 48px;
+            font-size: 22px;
+        }
+
+        /* Styles */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--dark);
+            border: 2px solid var(--dark);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #10b981, #22c55e);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        /* Hover Effects */
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-secondary:hover {
+            background: var(--dark);
+            color: white;
+        }
+
+        .btn-success:hover {
+            opacity: 0.9;
+        }
+
+        .btn-danger:hover {
+            transform: scale(1.05);
+        }
+
+        /* Special Effects */
+        .btn-glow:hover {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+        }
+
+        .btn-border-anim::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.4),
+                    transparent);
+            transition: all 0.6s;
+        }
+
+        .btn-border-anim:hover::before {
+            left: 100%;
+        }
+
+        /* Disabled State */
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 768px) {
+            .btn-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="btn-container">
+        <!-- Primary Buttons -->
+        <button class="btn btn-primary btn-md">
+            <a href="{%url 'update_user_roles'%}">
+                Modify User Roles
+            </a>
+        </button>
+        <button class="btn btn-primary btn-lg">Large Primary</button>
+        <button class="btn btn-primary btn-xl">X-Large Primary</button>
+        <button class="btn btn-primary btn-hg">Huge Primary</button>
+
+        <!-- Secondary Buttons -->
+        <button class="btn btn-secondary btn-md">Medium Secondary</button>
+        <button class="btn btn-secondary btn-lg btn-glow">Glowing Button</button>
+        <button class="btn btn-secondary btn-xl btn-border-anim">Border Animation</button>
+        <button class="btn btn-secondary btn-hg">Huge Secondary</button>
+
+        <!-- Success Buttons -->
+        <button class="btn btn-success btn-md">Medium Success</button>
+        <button class="btn btn-success btn-lg">Large Success</button>
+        <button class="btn btn-success btn-xl">X-Large Success</button>
+        <button class="btn btn-success btn-hg">Huge Success</button>
+
+        <!-- Danger Buttons -->
+        <button class="btn btn-danger btn-md">Medium Danger</button>
+        <button class="btn btn-danger btn-lg">Large Danger</button>
+        <button class="btn btn-danger btn-xl">X-Large Danger</button>
+        <button class="btn btn-danger btn-hg">Huge Danger</button>
+    </div>
+</body>
+
+</html>
