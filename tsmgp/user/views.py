@@ -581,3 +581,168 @@ def employee_query(request):
             context['error_message'] = f"Query error: {str(e)}"
             
     return render(request, 'user/employee_query.html', context)
+
+
+# views.py (add this new function)
+def advanced_query(request):
+    """Handle advanced database queries with joins, filters, and column selection"""
+    context = {
+        'query_executed': False,
+        'query_results': None,
+        'column_names': None,
+        'error_message': None,
+        'selected_tables': [],
+        'selected_columns': [],
+    }
+    
+    # Check if user is logged in and is an employee
+    if 'user_id' not in request.session or request.session.get('role') != 'employee':
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('login_register')
+    
+    # Define available tables and their columns
+    tables = {
+        'citizen': ['citizen_id', 'user_id', 'village_id', 'name', 'house_number', 'aadhar_number', 'date_of_birth', 'gender', 'occupation'],
+        'village': ['village_id', 'village_name', 'district', 'state', 'pincode', 'population'],
+        'tax_record': ['tax_id', 'citizen_id', 'tax_type', 'amount', 'due_date', 'payment_date', 'payment_status', 'payment_method'],
+        'certificate': ['certificate_id', 'citizen_id', 'certificate_type', 'issue_date', 'valid_until'],
+        'property': ['property_id', 'citizen_id', 'address', 'property_type', 'area', 'survey_number', 'registry_date', 'value'],
+        'complaint': ['complaint_id', 'citizen_id', 'complaint_type', 'description', 'complaint_date', 'status'],
+        'scheme': ['scheme_id', 'scheme_name', 'start_date', 'end_date', 'criteria', 'benefits'],
+    }
+    
+    # Define join keys between tables
+    join_keys = {
+        ('citizen', 'tax_record'): ('citizen_id', 'citizen_id'),
+        ('citizen', 'certificate'): ('citizen_id', 'citizen_id'),
+        ('citizen', 'property'): ('citizen_id', 'citizen_id'),
+        ('citizen', 'complaint'): ('citizen_id', 'citizen_id'),
+        ('citizen', 'village'): ('village_id', 'village_id'),
+    }
+    
+    context['tables'] = tables
+    
+    if request.method == 'POST':
+        # Get selected tables
+        selected_tables = []
+        for table in tables.keys():
+            if request.POST.get(f'table_{table}', '') == 'on':
+                selected_tables.append(table)
+        
+        if not selected_tables:
+            context['error_message'] = "Please select at least one table"
+            return render(request, 'user/advanced_query.html', context)
+        
+        # Get selected columns to display
+        selected_columns = []
+        for table in selected_tables:
+            for column in tables[table]:
+                if request.POST.get(f'display_{table}_{column}', '') == 'on':
+                    selected_columns.append(f"{table}.{column}")
+        
+        if not selected_columns:
+            # If no columns selected, show all columns from selected tables
+            for table in selected_tables:
+                for column in tables[table]:
+                    selected_columns.append(f"{table}.{column}")
+        
+        # Get filters
+        filters = []
+        filter_params = []
+        
+        for table in selected_tables:
+            for column in tables[table]:
+                filter_value = request.POST.get(f'filter_{table}_{column}', '').strip()
+                if filter_value:
+                    filters.append(f"{table}.{column} = %s")
+                    filter_params.append(filter_value)
+        
+        # Build the SQL query
+        try:
+            # Start with the first table
+            query_parts = []
+            
+            # Create column list for SELECT
+            formatted_columns = []
+            for column in selected_columns:
+                table, col = column.split('.')
+                formatted_columns.append(f"{table}.{col} AS {table}_{col}")
+            
+            select_clause = "SELECT " + ", ".join(formatted_columns)
+            
+            # FROM clause with first table
+            from_clause = f"FROM {selected_tables[0]}"
+            
+            # Add JOINS
+            joins = []
+            processed_tables = {selected_tables[0]}
+            
+            # Try to add the remaining tables using joins
+            tables_to_add = set(selected_tables) - processed_tables
+            
+            while tables_to_add:
+                joined_any = False
+                
+                for current_table in list(tables_to_add):
+                    for processed_table in processed_tables:
+                        # Check if we have a join key for these tables
+                        join_key = None
+                        if (processed_table, current_table) in join_keys:
+                            join_key = join_keys[(processed_table, current_table)]
+                            table1, table2 = processed_table, current_table
+                        elif (current_table, processed_table) in join_keys:
+                            join_key = join_keys[(current_table, processed_table)]
+                            table1, table2 = current_table, processed_table
+                        
+                        if join_key:
+                            col1, col2 = join_key
+                            joins.append(f"JOIN {current_table} ON {table1}.{col1} = {table2}.{col2}")
+                            processed_tables.add(current_table)
+                            tables_to_add.remove(current_table)
+                            joined_any = True
+                            break
+                    
+                    if joined_any:
+                        break
+                
+                # If we couldn't join any tables, use a CROSS JOIN for the remaining tables
+                if not joined_any and tables_to_add:
+                    next_table = tables_to_add.pop()
+                    joins.append(f"CROSS JOIN {next_table}")
+                    processed_tables.add(next_table)
+            
+            # Combine all query parts
+            query = select_clause + " " + from_clause + " " + " ".join(joins)
+            
+            # Add WHERE clause if there are filters
+            if filters:
+                query += " WHERE " + " AND ".join(filters)
+            
+            # Add a reasonable limit
+            query += " LIMIT 500"
+            
+            # Execute the query
+            with connection.cursor() as cursor:
+                cursor.execute(query, filter_params)
+                
+                # Get column names (formatted for display)
+                column_names = [col[0] for col in cursor.description]
+                
+                # Fetch results
+                results = cursor.fetchall()
+                
+                context['query_executed'] = True
+                context['query_results'] = results
+                context['column_names'] = column_names
+                context['selected_tables'] = selected_tables
+                context['selected_columns'] = selected_columns
+                context['query_sql'] = query
+                
+        except Exception as e:
+            context['error_message'] = f"Query error: {str(e)}"
+    
+    return render(request, 'user/advanced_query.html', context)
+
+# Update the employee_home view to include a link to the advanced query page
+def employee_home(request):
+    return render(request, 'user/employee_home.html')

@@ -22,6 +22,7 @@ urlpatterns = [
     path('village_info/<int:user_id>/', views.view_village_info, name='view_village_info'),
     path('employee_home/', views.employee_home, name='employee_home'),
     path('employee_query/', views.employee_query, name='employee_query'),  # New URL pattern
+    path('advanced_query/', views.advanced_query, name='advanced_query'),
 ]
 
 
