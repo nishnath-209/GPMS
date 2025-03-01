@@ -204,24 +204,46 @@
 <div class="dashboard">
     <h1 style="text-align: center; margin: 0 auto; font-weight: 600;">Complaint Records</h1>
 
+    <!-- Complaint Form -->
+    <form id="complaint-form" method="POST" action="{% url 'add_complaint' %}" style="margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
+        {% csrf_token %}
+        <label for="complaint_type" style="font-weight: 600;">Complaint Type:</label>
+        <input type="text" name="complaint_type" id="complaint_type" required style="margin-bottom: 10px; width: 100%; padding: 8px;">
+
+        <label for="description" style="font-weight: 600;">Description:</label>
+        <textarea name="description" id="description" required style="margin-bottom: 10px; width: 100%; padding: 8px;"></textarea>
+
+        <button type="submit" style="background-color: #4CAF50; color: white; padding: 10px; border: none; cursor: pointer;">
+            Submit Complaint
+        </button>
+    </form>
+
+    <!-- Complaint List -->
     <table style="width: 100%; border-collapse: collapse; margin: 20px 0; border: 1px solid #ddd;">
         <thead>
             <tr style="background-color: #f5f5f5;">
                 <th style="padding: 12px; border: 1px solid #ddd;">Description</th>
                 <th style="padding: 12px; border: 1px solid #ddd;">Type</th>
                 <th style="padding: 12px; border: 1px solid #ddd;">Date Filed</th>
+                <th style="padding: 12px; border: 1px solid #ddd;">Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for complaint in complaints %}
-            <tr>
-                <td style="padding: 12px; border: 1px solid #ddd;">{{complaint.description}}</td>
-                <td style="padding: 12px; border: 1px solid #ddd;">{{complaint.get_complaint_type_display}}</td>
-                <td style="padding: 12px; border: 1px solid #ddd;">{{complaint.complaint_date|date:"M d, Y"}}</td>
+            <tr id="complaint-{{ complaint.complaint_id }}">
+                <td style="padding: 12px; border: 1px solid #ddd;">{{ complaint.description }}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{ complaint.get_complaint_type_display }}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{ complaint.complaint_date|date:"M d, Y" }}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">
+                    <button class="delete-btn" data-id="{{ complaint.complaint_id }}" 
+                        style="background-color: red; color: white; padding: 5px; border: none; cursor: pointer;">
+                        Delete
+                    </button>
+                </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="3" style="padding: 12px; text-align: center; border: 1px solid #ddd;">
+                <td colspan="4" style="padding: 12px; text-align: center; border: 1px solid #ddd;">
                     No complaints registered
                 </td>
             </tr>
@@ -229,6 +251,9 @@
         </tbody>
     </table>
 </div>
+
+
+
 
 <script>
     function toggleEdit() {
@@ -276,6 +301,28 @@
         document.getElementById('cancelBtn').style.display = 'none';
         document.getElementById('editBtn').style.display = 'inline-block';
     }
+
+    document.querySelectorAll(".delete-btn").forEach(button => {
+        button.addEventListener("click", function() {
+            const complaintId = this.dataset.id;
+    
+            fetch(`/remove-complaint/`, {  // Ensure this matches Django's URL pattern
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: `complaint_id=${complaintId}`
+            }).then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      document.getElementById(`complaint-${complaintId}`).remove();
+                  } else {
+                      alert("Failed to delete complaint.");
+                  }
+              });
+        });
+    });
 </script>
 
 {% endblock %}
