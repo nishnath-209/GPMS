@@ -6,58 +6,64 @@
 
     <div
         style="text-align: center; width: 40%; margin: 0 auto; border: 1px solid #ddd; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
-        <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
-            <span style="font-weight: bold;">Citizen ID:</span>
-            <span>{{citizen_result.citizen_id}}</span>
-        </div>
-        <!-- <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
-            <span style="font-weight: bold;">User ID:</span>
-            <span>{{citizen_result.user_id}}</span>
-        </div>
-        <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
-            <span style="font-weight: bold;">Village ID:</span>
-            <span>{{citizen_result.village_id}}</span>
-        </div> -->
-        <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
-            <span style="font-weight: bold;">Name:</span>
-            <span>{{citizen_result.name}}</span>
-        </div>
-        <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
-            <span style="font-weight: bold;">Address:</span>
-            <span>{{citizen_result.address}}</span>
-        </div>
-        <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
-            <span style="font-weight: bold;">Aadhar Num:</span>
-            <span>{{citizen_result.aadhar_number}}</span>
-        </div>
-        <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
-            <span style="font-weight: bold;">DOB:</span>
-            <span>{{citizen_result.date_of_birth}}</span>
-        </div>
-        <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
-            <span style="font-weight: bold;">Occupation:</span>
-            <span>{{citizen_result.occupation}}</span>
-        </div>
-        <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
-            <span style="font-weight: bold;">VIllage name:</span>
-            <span>{{citizen_result.village_name}}</span>
-        </div>
-        <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
-            <span style="font-weight: bold;">District:</span>
-            <span>{{citizen_result.district}}</span>
-        </div>
-        <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
-            <span style="font-weight: bold;">State:</span>
-            <span>{{citizen_result.state}}</span>
-        </div>
-        <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
-            <span style="font-weight: bold;">Pincode:</span>
-            <span>{{citizen_result.pincode}}</span>
-        </div>
+        <form id="profileForm" method="POST" action="{% url 'update_profile' %}">
+            {% csrf_token %}
+            <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
+                <span style="font-weight: bold;">Citizen ID:</span>
+                <span>{{citizen_result.citizen_id}}</span>
+                <input type="hidden" name="citizen_id" value="{{citizen_result.citizen_id}}">
+            </div>
+            <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
+                <span style="font-weight: bold;">Name:</span>
+                <span id="name-display">{{citizen_result.name}}</span>
+                <input type="text" id="name-edit" name="name" value="{{citizen_result.name}}" style="display:none; width:70%; padding:5px; text-align:center;">
+            </div>
+            <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
+                <span style="font-weight: bold;">House Number:</span>
+                <span id="house-display">{{citizen_result.house_number}}</span>
+                <input type="text" id="house-edit" name="house_number" value="{{citizen_result.house_number}}" style="display:none; width:70%; padding:5px; text-align:center;">
+            </div>
+            <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
+                <span style="font-weight: bold;">Aadhar Num:</span>
+                <span id="aadhar-display">{{citizen_result.aadhar_number}}</span>
+                <input type="text" id="aadhar-edit" name="aadhar_number" value="{{citizen_result.aadhar_number}}" style="display:none; width:70%; padding:5px; text-align:center;">
+            </div>
+            <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
+                <span style="font-weight: bold;">DOB:</span>
+                <span id="dob-display">{{citizen_result.date_of_birth}}</span>
+                <input type="date" id="dob-edit" name="date_of_birth" value="{{citizen_result.date_of_birth|date:'Y-m-d'}}" style="display:none; width:70%; padding:5px; text-align:center;">
+            </div>
+            <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
+                <span style="font-weight: bold;">Occupation:</span>
+                <span id="occupation-display">{{citizen_result.occupation}}</span>
+                <input type="text" id="occupation-edit" name="occupation" value="{{citizen_result.occupation}}" style="display:none; width:70%; padding:5px; text-align:center;">
+            </div>
+            <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
+                <span style="font-weight: bold;">VIllage name:</span>
+                <span>{{citizen_result.village_name}}</span>
+            </div>
+            <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
+                <span style="font-weight: bold;">District:</span>
+                <span>{{citizen_result.district}}</span>
+            </div>
+            <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
+                <span style="font-weight: bold;">State:</span>
+                <span>{{citizen_result.state}}</span>
+            </div>
+            <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
+                <span style="font-weight: bold;">Pincode:</span>
+                <span>{{citizen_result.pincode}}</span>
+            </div>
+            <div style="margin-top: 20px;">
+                <button type="button" id="editBtn" class="btn btn-primary" onclick="toggleEdit()" style="background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Edit Profile</button>
+                <button type="submit" id="saveBtn" class="btn btn-success" style="display:none; background-color: #008CBA; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer;">Save Changes</button>
+                <button type="button" id="cancelBtn" class="btn btn-danger" onclick="cancelEdit()" style="display:none; background-color: #f44336; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
+            </div>
+        </form>
     </div>
-
 </div>
 
+<!-- Rest of the tables remain unchanged -->
 <div class="dashboard">
     <h1 style="text-align: center; margin: 0 auto; font-weight: 600;">Tax Records</h1>
 
@@ -85,10 +91,7 @@
                     -
                     {% endif %}
                 </td>
-                <td
-                    style="padding: 12px; border: 1px solid #ddd; color: #ddd;"></td>
-                    {{ tax.get_payment_status_display }}
-                </td>
+                <td style="padding: 12px; border: 1px solid #ddd;">{{tax.payment_status}}</td>
                 <td style="padding: 12px; border: 1px solid #ddd;">{{tax.payment_method|default:"-"}}</td>
             </tr>
             {% empty %}
@@ -102,7 +105,7 @@
     </table>
 </div>
 
-
+<!-- Remaining dashboard sections remain unchanged -->
 <div class="dashboard">
     <h1 style="text-align: center; margin: 0 auto; font-weight: 600;">Certificates</h1>
 
@@ -131,7 +134,6 @@
         </tbody>
     </table>
 </div>
-
 
 <div class="dashboard">
     <h1 style="text-align: center; margin: 0 auto; font-weight: 600;">Property Records</h1>
@@ -227,5 +229,53 @@
         </tbody>
     </table>
 </div>
+
+<script>
+    function toggleEdit() {
+        // Show edit fields and hide display spans
+        document.getElementById('name-display').style.display = 'none';
+        document.getElementById('name-edit').style.display = 'inline-block';
+        
+        document.getElementById('house-display').style.display = 'none';
+        document.getElementById('house-edit').style.display = 'inline-block';
+        
+        document.getElementById('aadhar-display').style.display = 'none';
+        document.getElementById('aadhar-edit').style.display = 'inline-block';
+        
+        document.getElementById('dob-display').style.display = 'none';
+        document.getElementById('dob-edit').style.display = 'inline-block';
+        
+        document.getElementById('occupation-display').style.display = 'none';
+        document.getElementById('occupation-edit').style.display = 'inline-block';
+        
+        // Show save and cancel buttons, hide edit button
+        document.getElementById('saveBtn').style.display = 'inline-block';
+        document.getElementById('cancelBtn').style.display = 'inline-block';
+        document.getElementById('editBtn').style.display = 'none';
+    }
+    
+    function cancelEdit() {
+        // Hide edit fields and show display spans
+        document.getElementById('name-display').style.display = 'inline-block';
+        document.getElementById('name-edit').style.display = 'none';
+        
+        document.getElementById('house-display').style.display = 'inline-block';
+        document.getElementById('house-edit').style.display = 'none';
+        
+        document.getElementById('aadhar-display').style.display = 'inline-block';
+        document.getElementById('aadhar-edit').style.display = 'none';
+        
+        document.getElementById('dob-display').style.display = 'inline-block';
+        document.getElementById('dob-edit').style.display = 'none';
+        
+        document.getElementById('occupation-display').style.display = 'inline-block';
+        document.getElementById('occupation-edit').style.display = 'none';
+        
+        // Hide save and cancel buttons, show edit button
+        document.getElementById('saveBtn').style.display = 'none';
+        document.getElementById('cancelBtn').style.display = 'none';
+        document.getElementById('editBtn').style.display = 'inline-block';
+    }
+</script>
 
 {% endblock %}

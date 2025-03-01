@@ -41,36 +41,66 @@ def home_view(request):
 def register_view(request):
     """Handle user registration"""
     if request.method == 'POST':
-        username = request.POST['username']
-        email = request.POST['email']
-        password = request.POST['password']
-        password_confirm = request.POST['password_confirm']
-        phone = request.POST['phone']
-        
-        # Basic validation
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        password_confirm = request.POST.get('password_confirm')
+        phone = request.POST.get('phone')
+
+        # Additional citizen details
+        aadhar_number = request.POST.get('aadhar_number')
+        date_of_birth = request.POST.get('date_of_birth')
+        gender = request.POST.get('gender')
+        occupation = request.POST.get('occupation')
+        house_number = request.POST.get('house_number')  # New field for house number
+
+        # Village details (from form)
+        village_name = request.POST.get('village_name')
+        district = request.POST.get('district')
+        state = request.POST.get('state')
+        pincode = request.POST.get('pincode')
+
+        # Validate password
         if password != password_confirm:
             messages.error(request, 'Passwords do not match')
             return redirect('login_register')
 
-        # hashed_password = hashlib.sha256(password.encode()).hexdigest()
-        # print("hi\n")
-
         with connection.cursor() as cursor:
             try:
-                # print("hi\n")
+                # Fetch village_id
                 cursor.execute("""
-                    INSERT INTO users 
-                    (username, password, email, phone, role) 
-                    VALUES (%s, %s, %s, %s, 'citizen')
+                    SELECT village_id FROM village WHERE village_name = %s AND district = %s AND state = %s AND pincode = %s
+                """, [village_name, district, state, pincode])
+
+                village = cursor.fetchone()
+                if village:
+                    village_id = village[0]  # Existing village_id
+
+                # Step 1: Insert into users table
+                cursor.execute("""
+                    INSERT INTO users (username, password, email, phone, role, registration_date) 
+                    VALUES (%s, %s, %s, %s, 'citizen', NOW()) RETURNING user_id
                 """, [username, password, email, phone])
-                # print("hi\n")
+
+                user_id = cursor.fetchone()[0]
+                print("User ID:", user_id)
+
+                # Step 2: Insert into citizen table 
+                cursor.execute("""
+                    INSERT INTO citizen (user_id, village_id, name, house_number, aadhar_number, date_of_birth, gender, occupation) 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                """, [user_id, village_id, username, house_number, aadhar_number, date_of_birth, gender, occupation])
+
                 messages.success(request, 'Registration successful! Please login.')
                 return redirect('login_register')
+
             except Exception as e:
                 messages.error(request, f'Registration failed: {str(e)}')
-        
-    # If not POST, redirect to login/register page
-    return render(request,'user/login_register.html')
+                print("Error:", e)
+
+    return render(request, 'user/login_register.html')
+
+
 
 def login_view(request):
     if request.method == 'POST':
@@ -136,6 +166,7 @@ def logout(request):
     # Redirect to the login page or home page
     return redirect('login_before')  # Or any other page you want to redirect to
 
+# Original dashboard function
 def dashboard(request):
     # Check if user is logged in
     if 'user_id' not in request.session:
@@ -155,7 +186,7 @@ def dashboard(request):
     with connection.cursor() as cursor:
         # Get all citizen information
         cursor.execute("""
-            SELECT c.citizen_id, c.name, c.address, c.aadhar_number, 
+            SELECT c.citizen_id, c.name, c.house_number, c.aadhar_number, 
                 c.date_of_birth, c.gender, c.occupation, v.village_name,
                 v.district, v.state, v.pincode
             FROM CITIZEN c
@@ -170,7 +201,7 @@ def dashboard(request):
             temp = {
                 'citizen_id': citizen_result[0],
                 'name': citizen_result[1],
-                'address': citizen_result[2],
+                'house_number': citizen_result[2],
                 'aadhar_number': citizen_result[3],
                 'date_of_birth': citizen_result[4],
                 'gender': citizen_result[5],
@@ -267,3 +298,39 @@ def dashboard(request):
         context['schemes'] = schemes
     
     return render(request, 'user/dashboard.html', context)
+
+# New function to handle profile updates
+def update_profile(request):
+    # Check if user is logged in
+    if 'user_id' not in request.session:
+        return redirect('login')
+    
+    if request.method == 'POST':
+        # Get form data
+        citizen_id = request.POST.get('citizen_id')
+        name = request.POST.get('name')
+        house_number = request.POST.get('house_number')
+        aadhar_number = request.POST.get('aadhar_number')
+        date_of_birth = request.POST.get('date_of_birth')
+        occupation = request.POST.get('occupation')
+        
+        # Validate data
+        if not citizen_id or not name or not house_number:
+            messages.error(request, "Required fields cannot be empty")
+            return redirect('dashboard')
+        
+        # Update citizen data in the database
+        with connection.cursor() as cursor:
+            try:
+                cursor.execute("""
+                    UPDATE CITIZEN
+                    SET name = %s, house_number = %s, aadhar_number = %s, 
+                        date_of_birth = %s, occupation = %s
+                    WHERE citizen_id = %s
+                """, [name, house_number, aadhar_number, date_of_birth, occupation, citizen_id])
+                
+                messages.success(request, "Profile updated successfully")
+            except Exception as e:
+                messages.error(request, f"Error updating profile: {str(e)}")
+    
+    return redirect('dashboard')
