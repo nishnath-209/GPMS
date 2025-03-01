@@ -31,7 +31,7 @@
                     <td style="padding: 12px; border: 1px solid #ddd;">{{ user.phone }}</td>
                     <td style="padding: 12px; border: 1px solid #ddd;">{{ user.role|capfirst }}</td>
                     <td style="padding: 12px; border: 1px solid #ddd;">
-                        <form method="POST" action="{% url 'admin_home' %}" style="display: inline-block;">
+                        <form method="POST" action="{% url 'update_user_roles' %}" style="display: inline-block;">
                             {% csrf_token %}
                             <select name="role_{{ user.user_id }}"
                                 style="padding: 5px; margin-right: 8px; width: 150px;">
