@@ -362,6 +362,7 @@ def add_complaint(request):
         return redirect("dashboard")
 
 
+
 @csrf_exempt
 def remove_complaint(request):
     """Handle removing a complaint."""
@@ -378,6 +379,18 @@ def remove_complaint(request):
 
 
 
+def view_notices(request):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT notice_id, title, content, notice_date, expiry_date FROM NOTICE ORDER BY notice_date DESC;")
+        notices = cursor.fetchall()
+
+    # Convert the result into a list of dictionaries for easier template rendering
+    notice_list = [
+        {'notice_id': row[0], 'title': row[1], 'content': row[2], 'notice_date': row[3], 'expiry_date': row[4]}
+        for row in notices
+    ]
+
+    return render(request, 'user/notices.html', {'notices': notice_list})
 
 
 
