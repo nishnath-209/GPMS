@@ -148,16 +148,31 @@
         </button>
         <button class="btn btn-primary btn-lg">            
             <a href="{%url 'citizen_admin'%}">
-            Citizen Data
+            Citizens Data
            </a></button>
-        <button class="btn btn-primary btn-xl">X-Large Primary</button>
-        <button class="btn btn-primary btn-hg">Huge Primary</button>
+        <button class="btn btn-primary btn-xl"> <a href="{%url 'monitor_admin'%}">
+            Government Monitors Data
+           </a></button>
+        </button>
+        <button class="btn btn-primary btn-hg"> <a href="{%url 'employee_admin'%}">
+            Panchayat Employee Data
+           </a></button></button>
 
         <!-- Secondary Buttons -->
-        <button class="btn btn-secondary btn-md">Medium Secondary</button>
-        <button class="btn btn-secondary btn-lg btn-glow">Glowing Button</button>
-        <button class="btn btn-secondary btn-xl btn-border-anim">Border Animation</button>
-        <button class="btn btn-secondary btn-hg">Huge Secondary</button>
+        <button class="btn btn-secondary btn-md"><a href="{%url 'scheme_admin'%}">
+            Schemes Data
+           </a></button></button>
+        <button class="btn btn-secondary btn-lg btn-glow"><a href="{%url 'scheme_enrollment_admin'%}">
+            Scheme Enrollment Data
+           </a></button></button>
+        <button class="btn btn-secondary btn-xl btn-border-anim"><a href="{%url 'complaint_admin'%}">
+            Complaints Data
+           </a></button></button>
+           <button class="btn btn-secondary btn-xl btn-border-anim">
+            <a href="{% url 'certificate_admin' %}">
+                Certificate Data
+            </a>
+        </button>
 
         <!-- Success Buttons -->
         <button class="btn btn-success btn-md">Medium Success</button>
