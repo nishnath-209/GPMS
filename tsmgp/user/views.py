@@ -74,7 +74,7 @@ def register_view(request):
                 """, [username, password, email, phone])
 
                 user_id = cursor.fetchone()[0]
-                
+
 
                 # **Step 2: Insert into citizen table**
                 cursor.execute("""
@@ -476,3 +476,26 @@ def update_user_roles(request):
 def admin_home(request):
     return render(request, 'user/admin_home.html')
 
+def citizen_admin(request):
+    context = {'citizens': []}
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT *
+            FROM citizen
+            ORDER BY citizen_id
+        """)
+        citizens= []
+        for row in cursor.fetchall():
+            citizens.append({
+                'citizen_id': row[0],
+                'user_id': row[1],
+                'village_id': row[2],
+                'name': row[3],
+                'address': row[4],
+                'aadhar_number': row[5],
+                'date_of_birth': row[6],
+                'gender': row[7],
+                'occupation':row[8]
+            })
+        context['citizens'] = citizens
+    return render(request,'user/citizen_admin.html',context)
