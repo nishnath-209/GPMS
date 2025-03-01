@@ -30,6 +30,12 @@
             margin-bottom: 20px;
             /* Space between banner and content */
         }
+        
+        /* Highlight animation class - changed to grey */
+        .highlight-section {
+            transition: background-color 0.3s ease;
+            background-color: rgba(128, 128, 128, 0.3);
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -45,13 +51,13 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="#" style="color: white;"><b>Home</b></a>
+                        <a class="nav-link" href="{% url 'home' %}" style="color: white;"><b>Home</b></a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#" style="color: white;"><b>About</b></a>
+                        <a class="nav-link scroll-link" href="{% if request.path != '/' %}{% url 'home' %}{% endif %}#about-section" style="color: white;"><b>About</b></a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#" style="color: white;"><b>Contact</b></a>
+                        <a class="nav-link scroll-link" href="#contact-section" style="color: white;"><b>Contact</b></a>
                     </li>
                 </ul>
 
@@ -59,7 +65,7 @@
                     {% if not ignore_login_status and request.session.user_id %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" style="color: white;">
-                            <b>{{request.session.name}}</b>
+                            <b>{{request.session.username}}</b>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="{% url 'dashboard' %}"><b>Profile</b></a></li>
@@ -94,7 +100,7 @@
     </div>
 
     <!-- Simple Footer -->
-    <footer class="py-4 bg-dark mt-4">
+    <footer class="py-4 bg-dark mt-4" id="contact-section">
         <div class="container">
             <div class="row justify-content-between">
                 <!-- Contact Information -->
@@ -155,8 +161,60 @@
             bannerImg.onerror = function () {
                 this.src = 'https://via.placeholder.com/1500x300';
             };
+            
+            // Smooth scrolling for anchor links
+            document.querySelectorAll('a.scroll-link').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    // Get the hash from the href
+                    const href = this.getAttribute('href');
+                    const targetId = href.includes('#') ? href.substring(href.indexOf('#')) : null;
+                    
+                    // Only prevent default if we have a hash to scroll to on the current page
+                    if (targetId && document.querySelector(targetId)) {
+                        e.preventDefault();
+                        
+                        // Scroll to the target section
+                        const targetElement = document.querySelector(targetId);
+                        window.scrollTo({
+                            top: targetElement.offsetTop - 80, // Offset for navbar
+                            behavior: 'smooth'
+                        });
+                        
+                        // Add highlight class
+                        targetElement.classList.add('highlight-section');
+                        
+                        // Remove highlight class after 1 second
+                        setTimeout(() => {
+                            targetElement.classList.remove('highlight-section');
+                        }, 1000);
+                    }
+                });
+            });
+            
+            // Check if URL contains an anchor
+            if (window.location.hash) {
+                const targetElement = document.querySelector(window.location.hash);
+                if (targetElement) {
+                    // Wait for page to fully load before scrolling
+                    setTimeout(() => {
+                        window.scrollTo({
+                            top: targetElement.offsetTop - 80, // Offset for navbar
+                            behavior: 'auto'
+                        });
+                        
+                        // Add highlight class
+                        targetElement.classList.add('highlight-section');
+                        
+                        // Remove highlight class after 1 second
+                        setTimeout(() => {
+                            targetElement.classList.remove('highlight-section');
+                        }, 100);
+                    }, 300);
+                }
+            }
         });
     </script>
+    
     {% block extra_js %}{% endblock %}
 </body>
 
