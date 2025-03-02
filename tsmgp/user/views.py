@@ -33,17 +33,18 @@ def citizen_home(request):
     """Display the Government monitors base page"""
     return render(request, 'user/citizen_home.html')
 
-
-@login_required
 def home_view(request):
+    print(request.session['role'])
     if request.session['role'] == 'citizen':
         return redirect('citizen_home')
-    elif request.session['role'] == 'government_moniter':
+    elif request.session['role'] == 'government_monitor':
         return redirect('government_monitors')
     elif request.session['role'] == 'admin':
         return redirect('admin_home')
-    else:
+    elif request.session['role'] == 'employee':
         return redirect('employee_home')
+    else:
+        return redirect('login_register')
 
 def register_view(request):
     """Handle user registration"""
@@ -161,18 +162,6 @@ def login_view(request):
                 return redirect('user/login_register')
     
     return render(request, 'user/login_register.html')
-
-
-def home_view(request):
-    if request.session['role'] == 'citizen':
-        return redirect('citizen_home')
-    elif request.session['role'] == 'gm':
-        return redirect('government_monitors')
-    elif request.session['role'] == 'admin':
-        return redirect('admin')
-    else:
-        return redirect('employee_home')
-
 
 def logout(request):
     """Handle user logout by clearing the session"""
