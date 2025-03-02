@@ -48,13 +48,10 @@ urlpatterns = [
     path('education_record_admin/', views.education_record_admin, name='education_record_admin'),
     path('agriculture_record_admin/', views.agriculture_record_admin, name='agriculture_record_admin'),
     path('village_admin/',views.village_admin,name='village_admin'),
-<<<<<<< HEAD
     path('employee_insert/',views.employee_insert,name='employee_insert'),
-=======
     path('delete_account/',views.delete_account,name='delete_account'),
     path('ge-update/<int:user_id>/', views.ge_update, name='ge_update'),
     path('pe-update/<int:user_id>/', views.pe_update, name='pe_update'),
->>>>>>> c3684dcf5652e029d750fc9025c8267c33537264
 ]
 
 
