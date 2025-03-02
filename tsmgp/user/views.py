@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.db import connection
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.utils.timezone import now
 from .models import users
 import hashlib
 from datetime import datetime
@@ -474,6 +475,37 @@ def view_notices(request):
 
     return render(request, 'user/notices.html', {'notices': notice_list})
 
+def add_notice(request):
+    if request.method == "POST":
+        title = request.POST.get('title')
+        content = request.POST.get('content')
+        expiry_date = request.POST.get('expiry_date')
+        user_id = request.session.get("user_id")  # Get the logged-in user's ID
+
+        print(title)
+
+        # Retrieve employee_id from panchayat_employee table
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT employee_id FROM panchayat_employee WHERE user_id = %s", [user_id])
+            employee = cursor.fetchone()
+
+        if employee:  # If employee_id exists
+            employee_id = employee[0]
+
+            
+
+            # Insert the new notice into the NOTICE table
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    INSERT INTO NOTICE (title, content, notice_date, expiry_date, employee_id)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, [title, content, now().date(), expiry_date, employee_id])
+        else:
+            print("Error")
+
+        return redirect('view_notices')
+
+    return redirect('view_notices')
 
 
 def view_village_info(request, user_id):
