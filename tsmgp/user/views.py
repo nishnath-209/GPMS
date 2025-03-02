@@ -7,8 +7,8 @@ from django.db import connection
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import users
-import datetime
 import hashlib
+from datetime import datetime
 
 def login_register_view(request):
     """Display the login/registration page"""
@@ -35,8 +35,14 @@ def citizen_home(request):
 
 @login_required
 def home_view(request):
-    """Display the home page after successful login"""
-    return render(request, 'user/home.html')
+    if request.session['role'] == 'citizen':
+        return redirect('citizen_home')
+    elif request.session['role'] == 'government_moniter':
+        return redirect('government_monitors')
+    elif request.session['role'] == 'admin':
+        return redirect('admin_home')
+    else:
+        return redirect('employee_home')
 
 def register_view(request):
     """Handle user registration"""
@@ -140,16 +146,15 @@ def login_view(request):
                 request.session['email'] = user[2]
                 request.session['phone'] = user[3]
                 request.session['role'] = user[4]
-                return redirect('home')
                 
-                # if user[4] == 'citizen':
-                #     return redirect('citizen_home')
-                # elif user[4] == 'gm':
-                #     return redirect('government_monitors')
-                # elif user[4] == 'admin':
-                #     return redirect('admin_home')
-                # else:
-                #     return redirect('employee_home')  # Go to dashboard page
+                if user[4] == 'citizen':
+                    return redirect('citizen_home')
+                elif user[4] == 'government_monitor':
+                    return redirect('government_monitors')
+                elif user[4] == 'admin':
+                    return redirect('admin_home')
+                else:
+                    return redirect('employee_home')
             else:
                 messages.error(request, 'Wrong username or password')
                 return redirect('user/login_register')
@@ -425,7 +430,7 @@ def add_complaint(request):
 
         complaint_type = request.POST.get("complaint_type")
         description = request.POST.get("description")
-        complaint_date = datetime.date.today()
+        complaint_date = datetime.now().date()
 
         #print(f"Adding complaint: {complaint_type}, {description}, {complaint_date}")
 
@@ -525,43 +530,146 @@ def update_user_roles(request):
     context = {'users': []}
     
     if request.method == 'POST':
-        # Iterate over all POST keys to find role updates
+
         for key in request.POST:
             if key.startswith('role_'):
                 user_id = key.split('_')[1]
                 new_role = request.POST.get(key)
-                
-                # Update user role
-                with connection.cursor() as cursor:
-                    cursor.execute("""
-                        UPDATE users
-                        SET role = %s
-                        WHERE user_id = %s
-                    """, [new_role, user_id])
-        
+
+                if new_role == 'employee':
+                    new_role = 'panchayat_employee'
+
+                # Fetch old role
+                old_role_str = None
+                try:
+                    with connection.cursor() as cursor:
+                        cursor.execute(
+                            "SELECT role FROM users WHERE user_id = %s",
+                            [user_id]
+                        )
+                        old_role = cursor.fetchone()
+                        if not old_role:
+                            messages.error(request, f"User {user_id} not found!")
+                            continue
+                        old_role_str = str(old_role[0])
+                except Exception as e:
+                    messages.error(request, f"Error fetching role: {str(e)}")
+                    continue
+
+                if old_role_str != 'citizen':
+                    messages.error(request, f"User {user_id} is not a citizen!")
+                    continue
+
+                # Handle role-specific rendering
+                if new_role == 'government_monitor':
+                    return redirect('ge_update', user_id=user_id)
+                elif new_role == 'panchayat_employee':
+                    return redirect('pe_update', user_id=user_id)
+
         messages.success(request, "Roles updated successfully")
         return redirect('update_user_roles')
 
-        # GET request handling
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            SELECT user_id, username, email, phone, role
-            FROM users
-            ORDER BY user_id
-        """)
-        users = []
-        for row in cursor.fetchall():
-            users.append({
+    # GET request handling
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT user_id, username, email, phone, role
+                FROM users
+                ORDER BY user_id
+            """)
+            users = [{
                 'user_id': row[0],
                 'username': row[1],
                 'email': row[2],
                 'phone': row[3],
                 'role': row[4]
-            })
-        context['users'] = users
-        context['roles'] = ['citizen', 'admin', 'employee', 'government_monitor']
-        
+            } for row in cursor.fetchall()]
+            
+            context['users'] = users
+            context['roles'] = ['citizen', 'admin', 'employee', 'government_monitor']
+            
+    except Exception as e:
+        messages.error(request, f"Database error: {str(e)}")
+
     return render(request, 'user/update_user_roles.html', context)
+
+def ge_update(request, user_id):
+    user_name = ''
+    with connection.cursor() as cursor:
+            # Get user's name from users table
+            cursor.execute(
+                "SELECT username FROM users WHERE user_id = %s",
+                [user_id]
+            )
+            user_name = cursor.fetchone()[0]
+
+    if request.method == 'POST':
+        # Handle form submission
+        department = request.POST.get('department')
+        designation = request.POST.get('designation')
+        
+        with connection.cursor() as cursor:
+
+            # Insert into GOVERNMENT_MONITOR
+            cursor.execute("""
+                INSERT INTO GOVERNMENT_MONITOR 
+                    (user_id, name, department, designation)
+                VALUES (%s, %s, %s, %s)
+            """, [user_id, user_name, department, designation])
+
+            cursor.execute("""
+                UPDATE users
+                SET role = 'government_monitor'
+                WHERE user_id = %s
+            """, [user_id])
+
+        return redirect('update_user_roles')
+
+    # GET request - show form
+    return render(request, 'user/ge_update.html', {
+        'user_id': user_id,
+        'name': user_name
+    })
+
+
+def pe_update(request, user_id):
+    user_name = ''
+    with connection.cursor() as cursor:
+            # Get user's name from users table
+            cursor.execute(
+                "SELECT username FROM users WHERE user_id = %s",
+                [user_id]
+            )
+            user_name = cursor.fetchone()[0]
+
+    if request.method == 'POST':
+        # Handle form submission
+        department = request.POST.get('department')
+        designation = request.POST.get('designation')
+        education = request.POST.get('education')
+        
+        with connection.cursor() as cursor:
+
+            # Insert into GOVERNMENT_MONITOR
+            cursor.execute("""
+                INSERT INTO panchayat_employee
+                    (user_id, name, designation, joining_date, department, education)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, [user_id, user_name, designation, datetime.now().date() ,department, education])
+
+            cursor.execute("""
+                UPDATE users
+                SET role = 'employee'
+                WHERE user_id = %s
+            """, [user_id])
+
+        return redirect('update_user_roles')
+
+    # GET request - show form
+    return render(request, 'user/pe_update.html', {
+        'user_id': user_id,
+        'name': user_name
+    })
 
 def admin_home(request):
     return render(request, 'user/admin_home.html')

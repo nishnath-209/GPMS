@@ -48,6 +48,8 @@ urlpatterns = [
     path('agriculture_record_admin/', views.agriculture_record_admin, name='agriculture_record_admin'),
     path('village_admin/',views.village_admin,name='village_admin'),
     path('delete_account/',views.delete_account,name='delete_account'),
+    path('ge-update/<int:user_id>/', views.ge_update, name='ge_update'),
+    path('pe-update/<int:user_id>/', views.pe_update, name='pe_update'),
 ]
 
 
