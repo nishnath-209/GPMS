@@ -716,12 +716,12 @@ def advanced_query_execute(request):
     filters = request.session.get('filters', {})
     display_columns = request.session.get('display_columns', [])
     
-    if not selected_tables or not display_columns:
+    if not selected_tables:
         messages.error(request, "Missing query parameters. Please start over.")
         return redirect('advanced_query_begin')
     
     try:
-        # Build the SQL query
+        # Build the SELECT clause with only checked columns
         if not display_columns:
             # If no columns explicitly selected, select all from all tables
             select_parts = []
@@ -729,33 +729,56 @@ def advanced_query_execute(request):
                 select_parts.append(f"{table}.*")
             select_clause = "SELECT " + ", ".join(select_parts)
         else:
-            # Use selected columns
+            # Use only the selected columns
             select_clause = "SELECT " + ", ".join(display_columns)
         
         # FROM clause with first table
         from_clause = f"FROM {selected_tables[0]}"
         
-        # Add JOINS for remaining tables
+        # Add JOINS for remaining tables with automatic common column detection
         join_clauses = []
+        joined_tables = {selected_tables[0]}
+        
         if len(selected_tables) > 1:
-            for i in range(1, len(selected_tables)):
-                # Define the join key - this is simplified, you may need to customize
-                # based on your database schema
-                current_table = selected_tables[i]
+            for table_to_join in selected_tables[1:]:
+                # Try to find a common column between this table and any already joined table
+                join_found = False
                 
-                # Look for common columns to join on (typically primary/foreign keys)
-                # Look for common columns to join on (typically primary/foreign keys)
-                join_column = None
-                for col in ["id", f"{current_table}_id", f"{selected_tables[0]}_id"]:
-                    if col in display_columns or f"{current_table}.{col}" in display_columns:
-                        join_column = col
-                        break
-
-                if join_column:
-                    join_clauses.append(f"LEFT JOIN {current_table} ON {selected_tables[0]}.{join_column} = {current_table}.{join_column}")
-                else:
-                    # If no join column found, use CROSS JOIN
-                    join_clauses.append(f"CROSS JOIN {current_table}")
+                for joined_table in joined_tables:
+                    with connection.cursor() as cursor:
+                        # Get columns for the joined table
+                        cursor.execute(f"SELECT column_name FROM information_schema.columns WHERE table_name = %s", [joined_table])
+                        joined_table_columns = [row[0] for row in cursor.fetchall()]
+                        
+                        # Get columns for the table to join
+                        cursor.execute(f"SELECT column_name FROM information_schema.columns WHERE table_name = %s", [table_to_join])
+                        table_to_join_columns = [row[0] for row in cursor.fetchall()]
+                        
+                        # Find common columns (potential join keys)
+                        common_columns = set(joined_table_columns) & set(table_to_join_columns)
+                        
+                        # Prioritize columns that look like foreign keys
+                        potential_join_columns = []
+                        for col in common_columns:
+                            if col.endswith('_id'):
+                                potential_join_columns.append(col)
+                        
+                        # If no columns ending with _id, use any common column
+                        if not potential_join_columns and common_columns:
+                            potential_join_columns = list(common_columns)
+                        
+                        # Use the first potential join column
+                        if potential_join_columns:
+                            join_col = potential_join_columns[0]
+                            join_clauses.append(f"LEFT JOIN {table_to_join} ON {joined_table}.{join_col} = {table_to_join}.{join_col}")
+                            join_found = True
+                            break
+                
+                if not join_found:
+                    # If no common column found, use CROSS JOIN
+                    join_clauses.append(f"CROSS JOIN {table_to_join}")
+                
+                joined_tables.add(table_to_join)
         
         # Build the WHERE clause for filters
         where_clauses = []
@@ -794,6 +817,9 @@ def advanced_query_execute(request):
     except Exception as e:
         messages.error(request, f"Query execution error: {str(e)}")
         return redirect('advanced_query_begin')
+
+
+
 # Update the employee_home view to include a link to the advanced query page
 def employee_home(request):
     return render(request, 'user/employee_home.html')
