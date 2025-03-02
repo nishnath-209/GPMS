@@ -50,6 +50,7 @@ urlpatterns = [
     path('delete_account/',views.delete_account,name='delete_account'),
     path('ge-update/<int:user_id>/', views.ge_update, name='ge_update'),
     path('pe-update/<int:user_id>/', views.pe_update, name='pe_update'),
+    path('government_monitor_query/',views.government_monitor_query,name='government_monitor_query'),
 ]
 
 

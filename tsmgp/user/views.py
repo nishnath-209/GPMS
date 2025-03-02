@@ -1344,3 +1344,90 @@ def village_admin(request):
             })
         context['village_records'] = village_records
     return render(request, 'user/village_admin.html', context)
+
+
+def dictfetchall(cursor):
+    """Return all rows from a cursor as a dict"""
+    columns = [col[0] for col in cursor.description]
+    return [
+        dict(zip(columns, row))
+        for row in cursor.fetchall()
+    ]
+
+def government_monitor_query(request):
+    """
+    View to handle the panchayat query form and display village information.
+    """
+    # Get all villages for the dropdown
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT village_id, village_name FROM VILLAGE ORDER BY village_name")
+        villages = dictfetchall(cursor)
+    
+    # Initialize context with villages for dropdown
+    context = {
+        'villages': villages,
+        'form_submitted': False
+    }
+    
+    # Process form submission
+    if request.method == 'POST':
+        village_name = request.POST.get('village_name', '')
+        
+        if village_name:
+            # Get village_id from village_name
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT village_id 
+                    FROM VILLAGE
+                    WHERE village_name = %s
+                """, [village_name])
+                result = cursor.fetchone()
+                
+                if not result:
+                    context.update({
+                        'form_submitted': True,
+                        'selected_village': village_name,
+                        'error': "Village not found"
+                    })
+                    return render(request, 'user/government_monitor_query.html', context)
+                
+                village_id = result[0]
+                
+                # Retrieve educational records
+                cursor.execute("""
+                    SELECT schools, colleges, students, teachers, literacy_rate, record_date
+                    FROM education_record
+                    WHERE village_id = %s
+                    ORDER BY record_date DESC
+                """, [village_id])
+                education_data = dictfetchall(cursor)
+                
+                # Retrieve agricultural records
+                cursor.execute("""
+                    SELECT total_agricultural_land, irrigated_land, major_crops, farmers_count, subsidy_amount, record_date
+                    FROM agriculture_record
+                    WHERE village_id = %s
+                    ORDER BY record_date DESC
+                """, [village_id])
+                agriculture_data = dictfetchall(cursor)
+                
+                # Retrieve health records
+                cursor.execute("""
+                    SELECT healthcare_facilities, doctors, nurses, beds, patients_treated, vaccination_count, record_date
+                    FROM HEALTH_RECORD
+                    WHERE village_id = %s
+                    ORDER BY record_date DESC
+                """, [village_id])
+                health_data = dictfetchall(cursor)
+                
+                # Update context with all the data
+                context.update({
+                    'form_submitted': True,
+                    'selected_village': village_name,
+                    'village_id': village_id,
+                    'education_data': education_data,
+                    'agriculture_data': agriculture_data,
+                    'health_data': health_data
+                })
+    
+    return render(request, 'user/government_monitor_query.html', context)

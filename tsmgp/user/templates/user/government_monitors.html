@@ -15,18 +15,23 @@
         <div class="col-md-4 mb-4">
             <div class="card h-100">
                 <div class="card-body">
-                    <h5 class="card-title">Expenditure Report</h5>
-                    <p class="card-text">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam in dui mauris.</p>
-                    <a href="#" class="btn btn-primary">download</a>
+                    <h5 class="card-title">Village Information</h5>
+                    <p class="card-text">Education Report, Health Report and Agriculture Report</p>
+                    <div class="text-center">
+                        <a href="{% url 'government_monitor_query' %}" class="btn btn-primary">View</a>
+                    </div>
                 </div>
             </div>
         </div>
+        {% comment %}
         <div class="col-md-4 mb-4">
             <div class="card h-100">
                 <div class="card-body">
                     <h5 class="card-title">Schemes Report</h5>
                     <p class="card-text">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam in dui mauris.</p>
-                    <a href="#" class="btn btn-primary">download</a>
+                    <div class="text-center">
+                        <a href="#" class="btn btn-primary">Download</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -35,7 +40,9 @@
                 <div class="card-body">
                     <h5 class="card-title">Environmental Report</h5>
                     <p class="card-text">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam in dui mauris.</p>
-                    <a href="#" class="btn btn-primary">download</a>
+                    <div class="text-center">
+                        <a href="#" class="btn btn-primary">Download</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -44,7 +51,9 @@
                 <div class="card-body">
                     <h5 class="card-title">Census Report</h5>
                     <p class="card-text">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam in dui mauris.</p>
-                    <a href="#" class="btn btn-primary">download</a>
+                    <div class="text-center">
+                        <a href="#" class="btn btn-primary">Download</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -53,23 +62,17 @@
                 <div class="card-body">
                     <h5 class="card-title">Agricultural Report</h5>
                     <p class="card-text">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam in dui mauris.</p>
-                    <a href="#" class="btn btn-primary">download</a>
+                    <div class="text-center">
+                        <a href="#" class="btn btn-primary">Download</a>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-4 mb-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Census Report</h5>
-                    <p class="card-text">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam in dui mauris.</p>
-                    <a href="#" class="btn btn-primary">download</a>
-                </div>
-            </div>
-        </div>
+        {% endcomment %}
     </div>
 
     <!-- Additional Section -->
-    <div class="row" id = "about-section">
+    <div class="row" id="about-section">
         <div class="col-md-6">
             <h3>About Our Platform</h3>
             <p>Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.</p>
