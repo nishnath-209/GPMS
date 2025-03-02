@@ -29,6 +29,11 @@
                 <input type="text" id="aadhar-edit" name="aadhar_number" value="{{citizen_result.aadhar_number}}" style="display:none; width:70%; padding:5px; text-align:center;">
             </div>
             <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
+                <span style="font-weight: bold;">Role:</span>
+                <span id="aadhar-display">{{request.session.role}}</span>
+                <input type="text" id="aadhar-edit" name="aadhar_number" value="{{citizen_result.aadhar_number}}" style="display:none; width:70%; padding:5px; text-align:center;">
+            </div>
+            <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
                 <span style="font-weight: bold;">DOB:</span>
                 <span id="dob-display">{{citizen_result.date_of_birth}}</span>
                 <input type="date" id="dob-edit" name="date_of_birth" value="{{citizen_result.date_of_birth|date:'Y-m-d'}}" style="display:none; width:70%; padding:5px; text-align:center;">

@@ -1,0 +1,56 @@
+{% extends "user/base.html" %}
+{% load static %}
+
+{% block title %}Notices{% endblock %}
+
+{% block content %}
+<div class="container mt-5 notices-container">
+    <h2 class="text-center mb-4">Latest Notices</h2>
+    
+    {% if notices %}
+        <div class="list-group">
+            {% for notice in notices %}
+                <div class="list-group-item list-group-item-action flex-column align-items-start mb-3 notice-item">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1 notice-title">{{ notice.title }}</h5>
+                        <small class="text-muted notice-date">{{ notice.notice_date }}</small>
+                    </div>
+                    <p class="mb-1 notice-content">{{ notice.content }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-center text-muted">No notices available.</p>
+    {% endif %}
+</div>
+
+<style>
+    .notices-container {
+        max-width: 800px;
+        margin: auto;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    .notice-item {
+        border-radius: 8px;
+        padding: 15px;
+        background: #f8f9fa;
+        transition: 0.3s;
+    }
+    .notice-item:hover {
+        background: #e9ecef;
+    }
+    .notice-title {
+        font-weight: bold;
+    }
+    .notice-date {
+        font-size: 0.85rem;
+    }
+    .notice-content {
+        font-size: 1rem;
+        color: #333;
+    }
+</style>
+{% endblock %}
