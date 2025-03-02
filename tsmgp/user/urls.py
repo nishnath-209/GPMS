@@ -17,6 +17,7 @@ urlpatterns = [
     path('login_register/', views.login_register_view, name='login_register'),
     path('register/', views.register_view, name='register'),
     path('view_notices/', views.view_notices, name='view_notices'),
+    path('add_notice/', views.add_notice, name='add_notice'),
     path('citizen_home/', views.citizen_home, name='citizen_home'),
     path('update_user_roles/', views.update_user_roles, name='update_user_roles'),
     path('admin_home/', views.admin_home, name='admin_home'),
@@ -47,7 +48,13 @@ urlpatterns = [
     path('education_record_admin/', views.education_record_admin, name='education_record_admin'),
     path('agriculture_record_admin/', views.agriculture_record_admin, name='agriculture_record_admin'),
     path('village_admin/',views.village_admin,name='village_admin'),
+<<<<<<< HEAD
     path('employee_insert/',views.employee_insert,name='employee_insert'),
+=======
+    path('delete_account/',views.delete_account,name='delete_account'),
+    path('ge-update/<int:user_id>/', views.ge_update, name='ge_update'),
+    path('pe-update/<int:user_id>/', views.pe_update, name='pe_update'),
+>>>>>>> c3684dcf5652e029d750fc9025c8267c33537264
 ]
 
 
