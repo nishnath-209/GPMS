@@ -114,8 +114,57 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        .navbar {
+            background-color: #000000 !important;
+            min-height: 50px;
+        }
+
+        .btn-outline-light {
+            border-color: #ffffff !important;
+            color: #ffffff !important;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-light:hover {
+            background-color: #00ff00 !important;
+            border-color: #00ff00 !important;
+            color: #000000 !important;
+        }
     </style>
 </head>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-black py-2">
+    <div class="container-fluid">
+        <div class="row w-100">
+            <!-- Left: Brand Logo -->
+            <div class="col-4 d-flex align-items-center">
+                <a class="navbar-brand" href="#" style="color: #00ff00; font-weight: 800; letter-spacing: 2px;">
+                    TSMGP
+                </a>
+            </div>
+
+            <!-- Center: Welcome Message -->
+            <div class="col-4 text-center">
+                <div class="navbar-text" style="color: #ffffff; font-size: 1.1rem; text-align: center;">
+                    Welcome, {% if request.session.username %}{{ request.session.username }}{% else %}Admin{% endif %}
+                </div>
+            </div>
+
+            <!-- Right: Logout -->
+            <div class="col-auto ms-auto"> <!-- Changed to auto width + margin start auto -->
+                <a href="{% url 'logout' %}" class="btn btn-sm btn-outline-light" style="padding: 0.3rem 1.5rem;   /* Increased horizontal padding */
+                          font-size: 0.9rem; 
+                          border-width: 1px;
+                          min-width: 10px;          /* Minimum width */
+                          margin-right: 1rem;">
+                    Logout
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
 
 <body>
     <h1 class="main-heading">GRAM PANCHAYAT MANAGEMENT SYSTEM</h1>

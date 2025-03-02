@@ -704,6 +704,9 @@ def pe_update(request, user_id):
     })
 
 def admin_home(request):
+    if not request.session.get('user_id') or request.session.get('role') != 'admin':
+        return redirect('login_register')
+    
     return render(request, 'user/admin_home.html')
 
 def citizen_admin(request):
