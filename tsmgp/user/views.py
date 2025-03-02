@@ -7,7 +7,6 @@ from django.db import connection
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import users
-import datetime
 import hashlib
 from datetime import datetime
 
@@ -36,8 +35,14 @@ def citizen_home(request):
 
 @login_required
 def home_view(request):
-    """Display the home page after successful login"""
-    return render(request, 'user/home.html')
+    if request.session['role'] == 'citizen':
+        return redirect('citizen_home')
+    elif request.session['role'] == 'government_moniter':
+        return redirect('government_monitors')
+    elif request.session['role'] == 'admin':
+        return redirect('admin_home')
+    else:
+        return redirect('employee_home')
 
 def register_view(request):
     """Handle user registration"""
@@ -136,16 +141,15 @@ def login_view(request):
                 request.session['email'] = user[2]
                 request.session['phone'] = user[3]
                 request.session['role'] = user[4]
-                return redirect('home')
                 
-                # if user[4] == 'citizen':
-                #     return redirect('citizen_home')
-                # elif user[4] == 'gm':
-                #     return redirect('government_monitors')
-                # elif user[4] == 'admin':
-                #     return redirect('admin_home')
-                # else:
-                #     return redirect('employee_home')  # Go to dashboard page
+                if user[4] == 'citizen':
+                    return redirect('citizen_home')
+                elif user[4] == 'government_monitor':
+                    return redirect('government_monitors')
+                elif user[4] == 'admin':
+                    return redirect('admin_home')
+                else:
+                    return redirect('employee_home')
             else:
                 messages.error(request, 'Wrong username or password')
                 return redirect('login_register')
@@ -398,7 +402,7 @@ def add_complaint(request):
 
         complaint_type = request.POST.get("complaint_type")
         description = request.POST.get("description")
-        complaint_date = datetime.date.today()
+        complaint_date = datetime.now().date()
 
         #print(f"Adding complaint: {complaint_type}, {description}, {complaint_date}")
 
