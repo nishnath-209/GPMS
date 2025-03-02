@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.db import connection
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.utils.timezone import now
 from .models import users
 import hashlib
 from datetime import datetime
@@ -474,6 +475,37 @@ def view_notices(request):
 
     return render(request, 'user/notices.html', {'notices': notice_list})
 
+def add_notice(request):
+    if request.method == "POST":
+        title = request.POST.get('title')
+        content = request.POST.get('content')
+        expiry_date = request.POST.get('expiry_date')
+        user_id = request.session.get("user_id")  # Get the logged-in user's ID
+
+        print(title)
+
+        # Retrieve employee_id from panchayat_employee table
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT employee_id FROM panchayat_employee WHERE user_id = %s", [user_id])
+            employee = cursor.fetchone()
+
+        if employee:  # If employee_id exists
+            employee_id = employee[0]
+
+            
+
+            # Insert the new notice into the NOTICE table
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    INSERT INTO NOTICE (title, content, notice_date, expiry_date, employee_id)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, [title, content, now().date(), expiry_date, employee_id])
+        else:
+            print("Error")
+
+        return redirect('view_notices')
+
+    return redirect('view_notices')
 
 
 def view_village_info(request, user_id):
@@ -672,6 +704,9 @@ def pe_update(request, user_id):
     })
 
 def admin_home(request):
+    if not request.session.get('user_id') or request.session.get('role') != 'admin':
+        return redirect('login_register')
+    
     return render(request, 'user/admin_home.html')
 
 def citizen_admin(request):
@@ -1043,6 +1078,170 @@ def advanced_query_execute(request):
         # print('1000\n')
         messages.error(request, f"Query execution error: {str(e)}")
         return redirect('advanced_query_begin')
+
+def employee_insert(request):
+    """Handle table viewing and data insertion for employees"""
+    if 'user_id' not in request.session or request.session.get('role') != 'employee':
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('login_register')
+    
+    tables = [
+        "users", "village", "citizen", "panchayat_employee", "government_monitor",
+        "scheme", "scheme_enrollment", "complaint", "certificate", "tax_record",
+        "property", "notice", "health_record", "education_record", "agriculture_record"
+    ]
+
+    context = {
+        'tables': tables,
+        'selected_table': None,
+        'table_data': None,
+        'columns': None,
+        'success_message': None,
+        'error_message': None
+    }
+
+    selected_table = request.GET.get('table')
+    if selected_table and selected_table in tables:
+        context['selected_table'] = selected_table
+        
+        try:
+            with connection.cursor() as cursor:
+                # Fetch primary keys dynamically
+                cursor.execute("""
+                    SELECT a.attname
+                    FROM pg_index i
+                    JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+                    WHERE i.indrelid = %s::regclass AND i.indisprimary
+                """, [selected_table])
+
+                primary_keys = {row[0] for row in cursor.fetchall()}  # Get actual primary key(s)
+
+                # Fetch column metadata
+                cursor.execute("""
+                    SELECT column_name, data_type, is_nullable, column_default 
+                    FROM information_schema.columns
+                    WHERE table_name = %s
+                    ORDER BY ordinal_position
+                """, [selected_table])
+
+                columns = []
+                for row in cursor.fetchall():
+                    columns.append({
+                        'name': row[0],
+                        'data_type': row[1],
+                        'is_nullable': row[2] == 'YES',
+                        'default': row[3],
+                        'is_primary_key': row[0] in primary_keys  # Correctly mark primary keys
+                    })
+
+                context['columns'] = columns
+
+                # Fetch table data
+                cursor.execute(f"SELECT * FROM {selected_table} LIMIT 100")
+                context['table_data'] = cursor.fetchall()
+
+        except Exception as e:
+            context['error_message'] = f"Error retrieving table data: {str(e)}"
+
+    # Handle form submission (insert)
+    if request.method == 'POST' and 'insert' in request.POST:
+        table_name = request.POST.get('table_name')
+        if table_name not in tables:
+            context['error_message'] = "Invalid table selected"
+            return render(request, 'user/employee_insert.html', context)
+
+        try:
+            with connection.cursor() as cursor:
+                # Fetch primary keys again (for validation)
+                cursor.execute("""
+                    SELECT a.attname
+                    FROM pg_index i
+                    JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+                    WHERE i.indrelid = %s::regclass AND i.indisprimary
+                """, [table_name])
+                primary_keys = {row[0] for row in cursor.fetchall()}
+
+                # Collect form data
+                form_data = {}
+                for key, value in request.POST.items():
+                    if key.startswith('field_'):
+                        field_name = key[6:]
+                        if request.POST.get(f'null_{field_name}') == 'on':
+                            form_data[field_name] = None
+                        else:
+                            if value.strip() or value == 'false':
+                                form_data[field_name] = value
+
+                # Remove primary keys if they are auto-generated
+                form_data = {k: v for k, v in form_data.items() if k not in primary_keys}
+
+                if not form_data:
+                    raise Exception("No valid form data submitted")
+
+                # Build INSERT query
+                columns = ", ".join(form_data.keys())
+                placeholders = ", ".join(["%s"] * len(form_data))
+                values = list(form_data.values())
+
+                query = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"
+                cursor.execute(query, values)
+
+                context['success_message'] = "Data inserted successfully!"
+                context['selected_table'] = table_name
+
+                # Refresh table data
+                cursor.execute(f"SELECT * FROM {table_name} LIMIT 100")
+                context['table_data'] = cursor.fetchall()
+
+                # Refresh column metadata
+                cursor.execute("""
+                    SELECT column_name, data_type, is_nullable, column_default 
+                    FROM information_schema.columns
+                    WHERE table_name = %s
+                    ORDER BY ordinal_position
+                """, [table_name])
+
+                columns = []
+                for row in cursor.fetchall():
+                    columns.append({
+                        'name': row[0],
+                        'data_type': row[1],
+                        'is_nullable': row[2] == 'YES',
+                        'default': row[3],
+                        'is_primary_key': row[0] in primary_keys
+                    })
+
+                context['columns'] = columns
+
+        except Exception as e:
+            context['error_message'] = f"Error inserting data: {str(e)}"
+
+            # Re-fetch column metadata
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("""
+                        SELECT column_name, data_type, is_nullable, column_default 
+                        FROM information_schema.columns
+                        WHERE table_name = %s
+                        ORDER BY ordinal_position
+                    """, [table_name])
+
+                    columns = []
+                    for row in cursor.fetchall():
+                        columns.append({
+                            'name': row[0],
+                            'data_type': row[1],
+                            'is_nullable': row[2] == 'YES',
+                            'default': row[3],
+                            'is_primary_key': row[0] in primary_keys
+                        })
+
+                    context['columns'] = columns
+            except:
+                pass
+
+    return render(request, 'user/employee_insert.html', context)
+
 
 
 
