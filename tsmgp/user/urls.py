@@ -34,6 +34,19 @@ urlpatterns = [
     path("advanced_query_step1/", views.advanced_query_step1, name="advanced_query_step1"),
     path("advanced_query_step2/", views.advanced_query_step2, name="advanced_query_step2"),
     path("advanced_query_execute/", views.advanced_query_execute, name="advanced_query_execute"),
+    path('monitor_admin/',views.monitor_admin,name='monitor_admin'),
+    path('employee_admin/',views.employee_admin,name='employee_admin'),
+    path('scheme_admin/',views.scheme_admin,name='scheme_admin'),
+    path('scheme_enrollment_admin/',views.scheme_enrollment_admin,name='scheme_enrollment_admin'),
+    path('complaint_admin/',views.complaint_admin,name='complaint_admin'),
+    path('certificate_admin/', views.certificate_admin, name='certificate_admin'),
+    path('tax_record_admin/', views.tax_record_admin, name='tax_record_admin'),
+    path('property_admin/', views.property_admin, name='property_admin'),
+    path('notice_admin/', views.notice_admin, name='notice_admin'),
+    path('health_record_admin/', views.health_record_admin, name='health_record_admin'),
+    path('education_record_admin/', views.education_record_admin, name='education_record_admin'),
+    path('agriculture_record_admin/', views.agriculture_record_admin, name='agriculture_record_admin'),
+    path('village_admin/',views.village_admin,name='village_admin'),
 ]
 
 
