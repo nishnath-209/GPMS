@@ -57,7 +57,20 @@
                                         {% for column in columns %}
                                         <tr>
                                             <td>{{ column|title }}</td>
-                                            <td><input type="text" class="form-control form-control-sm" name="filter_{{ table }}_{{ column }}" placeholder="Filter value"></td>
+                                            <td>
+                                                <div class="input-group input-group-sm">
+                                                    <select class="form-select form-select-sm" name="filter_op_{{ table }}_{{ column }}">
+                                                        <option value="=">=</option>
+                                                        <option value="!=">!=</option>
+                                                        <option value=">">&gt;</option>
+                                                        <option value=">=">&gt;=</option>
+                                                        <option value="<">&lt;</option>
+                                                        <option value="<=">&lt;=</option>
+                                                        <option value="LIKE">LIKE</option>
+                                                    </select>
+                                                    <input type="text" class="form-control form-control-sm" name="filter_{{ table }}_{{ column }}" placeholder="Filter value">
+                                                </div>
+                                            </td>
                                             <td><input type="checkbox" class="form-check-input" name="display_{{ table }}_{{ column }}" checked></td>
                                         </tr>
                                         {% endfor %}
