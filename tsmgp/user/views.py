@@ -193,6 +193,23 @@ def dashboard(request):
     
     with connection.cursor() as cursor:
         # Get all citizen information
+
+        cursor.execute("""
+            SELECT pe.monitor_id, pe.department, pe.designation
+            FROM government_monitor pe
+            WHERE pe.user_id = %s
+        """, [user_id])
+
+        gm_result = cursor.fetchone()
+
+        cursor.execute("""
+            SELECT pe.employee_id, pe.designation, pe.joining_date, pe.department, pe.education
+            FROM panchayat_employee pe
+            WHERE pe.user_id = %s
+        """, [user_id])
+
+        employee_result = cursor.fetchone()
+
         cursor.execute("""
             SELECT c.citizen_id, c.name, c.house_number, c.aadhar_number, 
                 c.date_of_birth, c.gender, c.occupation, v.village_name,
@@ -203,6 +220,10 @@ def dashboard(request):
         """, [user_id])
 
         citizen_result = cursor.fetchone()
+        # print(citizen_result)
+
+        
+    
 
         # Check if result is not None
         if citizen_result:
@@ -222,16 +243,40 @@ def dashboard(request):
         else:
             temp = {}
 
+        
+        if employee_result:
+            temp1 = {
+                'employee_id': employee_result[0],
+                'designation': employee_result[1],
+                'joining_date': employee_result[2],
+                'department': employee_result[3],
+                'education': employee_result[4], 
+            }
+        else:
+            temp1 = {}
+        
+        if gm_result:
+            temp2 ={
+                'monitor_id': gm_result[0],
+                'designation': gm_result[1],
+                'department': gm_result[2],
+            }
+        else:
+            temp2 = {}
+
         context = {
-            'citizen_result': temp
+            'citizen_result': temp,
+            'employee_result': temp1,
+            'gm_result': temp2,
         }
+
+        # print(employee_result)
         
         if citizen_result:
             # Get column names from cursor description
             columns = [col[0] for col in cursor.description]
             citizen_info = dict(zip(columns, citizen_result))
             context['citizen_info'] = citizen_info
-            
             citizen_id = citizen_info['citizen_id']
             
             # Continue with your existing queries for tax_records, certificates, etc.
@@ -645,10 +690,12 @@ def advanced_query_step1(request):
         
         if not selected_tables:
             messages.error(request, "Please select at least one table")
+            print("Error")
             return redirect('advanced_query_begin')
         
         # Store selected tables in session
         request.session['selected_tables'] = selected_tables
+        #print("OKAY")
         
         # Define available columns for each selected table
         table_columns = {
@@ -687,6 +734,7 @@ def advanced_query_step2(request):
     
     if not selected_tables:
         # If no tables in session, start over
+        print("Error")
         return redirect('advanced_query_begin')
     
     if request.method == "POST":

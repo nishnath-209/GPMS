@@ -24,7 +24,7 @@
                 <input type="text" id="house-edit" name="house_number" value="{{citizen_result.house_number}}" style="display:none; width:70%; padding:5px; text-align:center;">
             </div>
             <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
-                <span style="font-weight: bold;">Aadhar Num:</span>
+                <span style="font-weight: bold;">Aadhar Number:</span>
                 <span id="aadhar-display">{{citizen_result.aadhar_number}}</span>
                 <input type="text" id="aadhar-edit" name="aadhar_number" value="{{citizen_result.aadhar_number}}" style="display:none; width:70%; padding:5px; text-align:center;">
             </div>
@@ -44,7 +44,7 @@
                 <input type="text" id="occupation-edit" name="occupation" value="{{citizen_result.occupation}}" style="display:none; width:70%; padding:5px; text-align:center;">
             </div>
             <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
-                <span style="font-weight: bold;">VIllage name:</span>
+                <span style="font-weight: bold;">Village name:</span>
                 <span>{{citizen_result.village_name}}</span>
             </div>
             <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
@@ -59,6 +59,45 @@
                 <span style="font-weight: bold;">Pincode:</span>
                 <span>{{citizen_result.pincode}}</span>
             </div>
+
+            {% if request.session.role in "employee" %}
+                <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
+                    <span style="font-weight: bold;">Employee ID:</span>
+                    <span>{{employee_result.employee_id}}</span>
+                </div>
+                <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
+                    <span style="font-weight: bold;">Designation:</span>
+                    <span>{{employee_result.designation}}</span>
+                </div>
+                <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
+                    <span style="font-weight: bold;">Joining-Date:</span>
+                    <span>{{employee_result.joining_date}}</span>
+                </div>
+                <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
+                    <span style="font-weight: bold;">Department:</span>
+                    <span>{{employee_result.department}}</span>
+                </div>
+                <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
+                    <span style="font-weight: bold;">Education:</span>
+                    <span>{{employee_result.education}}</span>
+                </div>
+            {% endif %}
+
+            {% if request.session.role in "government_monitor" %}
+                <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
+                    <span style="font-weight: bold;">Government Monitor ID:</span>
+                    <span>{{gm_result.monitor_id}}</span>
+                </div>
+                <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
+                    <span style="font-weight: bold;">Designation:</span>
+                    <span>{{gm_result.designation}}</span>
+                </div>
+                <div style="margin-bottom: 10px; font-size: 16px; text-align: center;">
+                    <span style="font-weight: bold;">Department:</span>
+                    <span>{{gm_result.department}}</span>
+                </div>
+            {% endif %}
+
             <div style="margin-top: 20px;">
                 <button type="button" id="editBtn" class="btn btn-primary" onclick="toggleEdit()" style="background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Edit Profile</button>
                 <button type="submit" id="saveBtn" class="btn btn-success" style="display:none; background-color: #008CBA; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer;">Save Changes</button>
