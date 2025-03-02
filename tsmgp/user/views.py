@@ -54,8 +54,9 @@ def register_view(request):
         occupation = request.POST.get('occupation')
         house_number = request.POST.get('house_number')
 
-        # **Fetch village_id directly from the form**
-        village_id = request.POST.get('village_id')
+        # *Fetch village_id directly from the form*
+        village_name = request.POST.get('village_name')
+        pincode = request.POST.get('pincode')
 
         # Validate password
         if password != password_confirm:
@@ -64,7 +65,7 @@ def register_view(request):
 
         with connection.cursor() as cursor:
             try:
-                # **Step 1: Insert into users table**
+                # *Step 1: Insert into users table*
                 cursor.execute("""
                     INSERT INTO users (username, password, email, phone, role, registration_date) 
                     VALUES (%s, %s, %s, %s, 'citizen', NOW()) RETURNING user_id
@@ -72,8 +73,18 @@ def register_view(request):
 
                 user_id = cursor.fetchone()[0]
 
+                cursor.execute("""
+                    SELECT village_id FROM village 
+                    WHERE village_name = %s AND pincode = %s
+                """, [village_name, pincode])
 
-                # **Step 2: Insert into citizen table**
+                village_row = cursor.fetchone()
+
+                if village_row:
+                    village_id = village_row[0]  # Extracting village_id if it exists
+
+
+                # *Step 2: Insert into citizen table*
                 cursor.execute("""
                     INSERT INTO citizen (user_id, village_id, name, house_number, aadhar_number, date_of_birth, gender, occupation) 
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
@@ -87,7 +98,6 @@ def register_view(request):
                 print("Error:", e)
 
     return render(request, 'user/login_register.html')
-
 
 def login_view(request):
     if request.method == 'POST':
@@ -280,7 +290,7 @@ def dashboard(request):
                 complaint_dict["get_complaint_type_display"] = complaint_dict["complaint_type"]
                 complaints.append(complaint_dict)
 
-        context['complaints'] = complaints
+            context['complaints'] = complaints
         
         # Get schemes (available to all users regardless of citizen status)
         cursor.execute("""
@@ -372,8 +382,6 @@ def remove_complaint(request):
     return JsonResponse({"success": False}, status=400)
 
 
-<<<<<<< HEAD
-=======
 
 def view_notices(request):
     with connection.cursor() as cursor:
@@ -390,7 +398,6 @@ def view_notices(request):
 
 
 
->>>>>>> 616f8b516e1e560df4f33c235387437099766e92
 def view_village_info(request, user_id):
     with connection.cursor() as cursor:
         # Get citizen_id and village_id
@@ -595,6 +602,8 @@ def employee_query(request):
 
 # Add these updated functions to your views.py file
 
+# Add these updated functions to your views.py file
+
 def advanced_query_begin(request):
     """Initial entry point for advanced query - shows table selection form"""
     # Get all available tables for selection
@@ -707,23 +716,12 @@ def advanced_query_execute(request):
     filters = request.session.get('filters', {})
     display_columns = request.session.get('display_columns', [])
     
-    if not selected_tables:
+    if not selected_tables or not display_columns:
         messages.error(request, "Missing query parameters. Please start over.")
         return redirect('advanced_query_begin')
     
     try:
-        # Define relationships between tables for joins
-        table_relationships = {
-            'citizen': {'village': ('village_id', 'village_id')},
-            'tax_record': {'citizen': ('citizen_id', 'citizen_id')},
-            'certificate': {'citizen': ('citizen_id', 'citizen_id')},
-            'property': {'citizen': ('citizen_id', 'citizen_id')},
-            'complaint': {'citizen': ('citizen_id', 'citizen_id')},
-            'users': {'citizen': ('user_id', 'user_id')}
-            # Add more relationships as needed
-        }
-        
-        # Build the SELECT clause with only the requested display columns
+        # Build the SQL query
         if not display_columns:
             # If no columns explicitly selected, select all from all tables
             select_parts = []
@@ -734,49 +732,30 @@ def advanced_query_execute(request):
             # Use selected columns
             select_clause = "SELECT " + ", ".join(display_columns)
         
-        # Start with the first table
+        # FROM clause with first table
         from_clause = f"FROM {selected_tables[0]}"
         
-        # Add JOINS for remaining tables based on defined relationships
+        # Add JOINS for remaining tables
         join_clauses = []
         if len(selected_tables) > 1:
-            # First, build a graph of connected tables
-            connected = {selected_tables[0]}
-            remaining = set(selected_tables[1:])
-            
-            # Keep adding joins while there are tables to connect
-            while remaining:
-                added_any = False
+            for i in range(1, len(selected_tables)):
+                # Define the join key - this is simplified, you may need to customize
+                # based on your database schema
+                current_table = selected_tables[i]
                 
-                for curr_table in list(remaining):
-                    # Try to find a connection from any already connected table
-                    for connected_table in connected:
-                        # Check direct relationship
-                        if connected_table in table_relationships and curr_table in table_relationships[connected_table]:
-                            local_col, foreign_col = table_relationships[connected_table][curr_table]
-                            join_clauses.append(f"LEFT JOIN {curr_table} ON {connected_table}.{local_col} = {curr_table}.{foreign_col}")
-                            connected.add(curr_table)
-                            remaining.remove(curr_table)
-                            added_any = True
-                            break
-                            
-                        # Check reverse relationship
-                        elif curr_table in table_relationships and connected_table in table_relationships[curr_table]:
-                            local_col, foreign_col = table_relationships[curr_table][connected_table]
-                            join_clauses.append(f"LEFT JOIN {curr_table} ON {curr_table}.{local_col} = {connected_table}.{foreign_col}")
-                            connected.add(curr_table)
-                            remaining.remove(curr_table)
-                            added_any = True
-                            break
-                            
-                    if added_any:
+                # Look for common columns to join on (typically primary/foreign keys)
+                # Look for common columns to join on (typically primary/foreign keys)
+                join_column = None
+                for col in ["id", f"{current_table}_id", f"{selected_tables[0]}_id"]:
+                    if col in display_columns or f"{current_table}.{col}" in display_columns:
+                        join_column = col
                         break
-                
-                # If we couldn't find any joins, use a CROSS JOIN for the next table
-                if not added_any and remaining:
-                    next_table = remaining.pop()
-                    join_clauses.append(f"CROSS JOIN {next_table}")
-                    connected.add(next_table)
+
+                if join_column:
+                    join_clauses.append(f"LEFT JOIN {current_table} ON {selected_tables[0]}.{join_column} = {current_table}.{join_column}")
+                else:
+                    # If no join column found, use CROSS JOIN
+                    join_clauses.append(f"CROSS JOIN {current_table}")
         
         # Build the WHERE clause for filters
         where_clauses = []
@@ -815,7 +794,301 @@ def advanced_query_execute(request):
     except Exception as e:
         messages.error(request, f"Query execution error: {str(e)}")
         return redirect('advanced_query_begin')
-
 # Update the employee_home view to include a link to the advanced query page
 def employee_home(request):
     return render(request, 'user/employee_home.html')
+def citizen_admin(request):
+    context = {'citizens': []}
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT *
+            FROM citizen
+            ORDER BY citizen_id
+        """)
+        citizens= []
+        for row in cursor.fetchall():
+            citizens.append({
+                'citizen_id': row[0],
+                'user_id': row[1],
+                'village_id': row[2],
+                'name': row[3],
+                'address': row[4],
+                'aadhar_number': row[5],
+                'date_of_birth': row[6],
+                'gender': row[7],
+                'occupation':row[8]
+            })
+        context['citizens'] = citizens
+    return render(request,'user/citizen_admin.html',context)
+def monitor_admin(request):
+    context = {'monitors': []}
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT *
+            FROM government_monitor
+            ORDER BY monitor_id
+        """)
+        monitors= []
+        for row in cursor.fetchall():
+            monitors.append({
+                'monitor_id': row[0],
+                'user_id': row[1],
+                'name': row[2],
+                'department': row[3],
+                'designation': row[4]
+  
+            })
+        context['monitors'] = monitors
+    return render(request,'user/monitor_admin.html',context)
+def employee_admin(request):
+    context = {'employees': []}
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT *
+            FROM panchayat_employee
+            ORDER BY employee_id
+        """)
+        employees = []
+        for row in cursor.fetchall():
+            employees.append({
+                'employee_id': row[0],
+                'user_id': row[1],
+                'name': row[2],
+                'designation': row[3],
+                'joining_date': row[4],
+                'department': row[5],
+                'education': row[6]
+            })
+        context['employees'] = employees
+    return render(request, 'user/employee_admin.html', context)
+def scheme_admin(request):
+    context = {'schemes': []}
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT *
+            FROM scheme
+            ORDER BY scheme_id
+        """)
+        schemes = []
+        for row in cursor.fetchall():
+            schemes.append({
+                'scheme_id': row[0],
+                'scheme_name': row[1],
+                'description': row[2],
+                'criteria': row[3],
+                'start_date': row[4],
+                'end_date': row[5],
+                'budget_allocated': row[6]
+            })
+        context['schemes'] = schemes
+    return render(request, 'user/scheme_admin.html', context)
+def scheme_enrollment_admin(request):
+    context = {'enrollments': []}
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT *
+            FROM scheme_enrollment
+            ORDER BY enrollment_id
+        """)
+        enrollments = []
+        for row in cursor.fetchall():
+            enrollments.append({
+                'enrollment_id': row[0],
+                'scheme_id': row[1],
+                'citizen_id': row[2],
+                'enrollment_date': row[3],
+                'status': row[4],
+                'benefit_amount': row[5]
+            })
+        context['enrollments'] = enrollments
+    return render(request, 'user/scheme_enrollment_admin.html', context)
+def complaint_admin(request):
+    context = {'complaints': []}
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT *
+            FROM complaint
+            ORDER BY complaint_id
+        """)
+        complaints = []
+        for row in cursor.fetchall():
+            complaints.append({
+                'complaint_id': row[0],
+                'citizen_id': row[1],
+                'complaint_type': row[2],
+                'description': row[3],
+                'complaint_date': row[4]
+            })
+        context['complaints'] = complaints
+    return render(request, 'user/complaint_admin.html', context)
+def certificate_admin(request):
+    context = {'certificates': []}
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT *
+            FROM certificate
+            ORDER BY certificate_id
+        """)
+        certificates = []
+        for row in cursor.fetchall():
+            certificates.append({
+                'certificate_id': row[0],
+                'citizen_id': row[1],
+                'certificate_type': row[2],
+                'issue_date': row[3],
+                'valid_until': row[4]
+            })
+        context['certificates'] = certificates
+    return render(request, 'user/certificate_admin.html', context)
+def tax_record_admin(request):
+    context = {'tax_records': []}
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT *
+            FROM tax_record
+            ORDER BY tax_id
+        """)
+        tax_records = []
+        for row in cursor.fetchall():
+            tax_records.append({
+                'tax_id': row[0],
+                'citizen_id': row[1],
+                'tax_type': row[2],
+                'amount': row[3],
+                'due_date': row[4],
+                'payment_date': row[5],
+                'payment_status': row[6],
+                'payment_method': row[7]
+            })
+        context['tax_records'] = tax_records
+    return render(request, 'user/tax_record_admin.html', context)
+def property_admin(request):
+    context = {'properties': []}
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT *
+            FROM property
+            ORDER BY property_id
+        """)
+        properties = []
+        for row in cursor.fetchall():
+            properties.append({
+                'property_id': row[0],
+                'citizen_id': row[1],
+                'property_type': row[2],
+                'address': row[3],
+                'area': row[4],
+                'survey_number': row[5],
+                'registry_date': row[6],
+                'value': row[7]
+            })
+        context['properties'] = properties
+    return render(request, 'user/property_admin.html', context)
+def notice_admin(request):
+    context = {'notices': []}
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT *
+            FROM notice
+            ORDER BY notice_id
+        """)
+        notices = []
+        for row in cursor.fetchall():
+            notices.append({
+                'notice_id': row[0],
+                'title': row[1],
+                'content': row[2],
+                'notice_date': row[3],
+                'expiry_date': row[4],
+                'employee_id': row[5]
+            })
+        context['notices'] = notices
+    return render(request, 'user/notice_admin.html', context)
+def health_record_admin(request):
+    context = {'health_records': []}
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT *
+            FROM health_record
+            ORDER BY health_id
+        """)
+        health_records = []
+        for row in cursor.fetchall():
+            health_records.append({
+                'health_id': row[0],
+                'village_id': row[1],
+                'record_date': row[2],
+                'healthcare_facilities': row[3],
+                'doctors': row[4],
+                'nurses': row[5],
+                'beds': row[6],
+                'patients_treated': row[7],
+                'vaccination_count': row[8]
+            })
+        context['health_records'] = health_records
+    return render(request, 'user/health_record_admin.html', context)
+def education_record_admin(request):
+    context = {'education_records': []}
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT *
+            FROM education_record
+            ORDER BY education_id
+        """)
+        education_records = []
+        for row in cursor.fetchall():
+            education_records.append({
+                'education_id': row[0],
+                'village_id': row[1],
+                'record_date': row[2],
+                'schools': row[3],
+                'colleges': row[4],
+                'students': row[5],
+                'teachers': row[6],
+                'literacy_rate': row[7]
+            })
+        context['education_records'] = education_records
+    return render(request, 'user/education_record_admin.html', context)
+def agriculture_record_admin(request):
+    context = {'agriculture_records': []}
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT *
+            FROM agriculture_record
+            ORDER BY agriculture_id
+        """)
+        agriculture_records = []
+        for row in cursor.fetchall():
+            agriculture_records.append({
+                'agriculture_id': row[0],
+                'village_id': row[1],
+                'record_date': row[2],
+                'total_agricultural_land': row[3],
+                'irrigated_land': row[4],
+                'major_crops': row[5],
+                'farmers_count': row[6],
+                'subsidy_amount': row[7]
+            })
+        context['agriculture_records'] = agriculture_records
+    return render(request, 'user/agriculture_record_admin.html', context)
+def village_admin(request):
+    context = {'village_records': []}
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT *
+            FROM VILLAGE
+            ORDER BY village_id
+        """)
+        village_records = []
+        for row in cursor.fetchall():
+            village_records.append({
+                'village_id': row[0],
+                'village_name': row[1],
+                'district': row[2],
+                'state': row[3],
+                'population': row[4],
+                'area': row[5],
+                'pincode': row[6]
+            })
+        context['village_records'] = village_records
+    return render(request, 'user/village_admin.html', context)
