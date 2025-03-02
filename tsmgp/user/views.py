@@ -119,7 +119,7 @@ def login_view(request):
             # Fetch citizen details using the user_id
             cursor.execute("""
                 SELECT * FROM citizen WHERE user_id = %s
-            """, [user[0]])
+            """,[user[0]])
             
             #citizen = cursor.fetchone()
             cursor.execute("SELECT * FROM citizen WHERE user_id = %s", [user[0]])
@@ -135,16 +135,16 @@ def login_view(request):
                 request.session['email'] = user[2]
                 request.session['phone'] = user[3]
                 request.session['role'] = user[4]
-                # return redirect('home')
+                return redirect('home')
                 
-                if user[4] == 'citizen':
-                    return redirect('citizen_home')
-                elif user[4] == 'gm':
-                    return redirect('government_monitors')
-                elif user[4] == 'admin':
-                    return redirect('admin_home')
-                else:
-                    return redirect('employee_home')  # Go to dashboard page
+                # if user[4] == 'citizen':
+                #     return redirect('citizen_home')
+                # elif user[4] == 'gm':
+                #     return redirect('government_monitors')
+                # elif user[4] == 'admin':
+                #     return redirect('admin_home')
+                # else:
+                #     return redirect('employee_home')  # Go to dashboard page
             else:
                 messages.error(request, 'Wrong username or password')
                 return redirect('login_register')
@@ -653,14 +653,22 @@ def advanced_query_begin(request):
     """Initial entry point for advanced query - shows table selection form"""
     # Get all available tables for selection
     tables = {
-        "citizen": "Citizen",
-        "village": "Village",
-        "tax_record": "Tax Record",
-        "certificate": "Certificate",
-        "property": "Property",
-        "complaint": "Complaint",
-        "scheme": "Scheme",
-        "users": "Users",
+        "users": "users",
+        "village": "village",
+        "citizen": "citizen",
+        "panchayat_employee": "panchayat_employee",
+        "government_monitor": "government_monitor",
+        "scheme": "scheme",
+        "scheme_enrollment": "scheme_enrollment",
+        "complaint": "complaint",
+        "certificate": "certificate",
+        "tax_record": "tax_record",
+        "property": "property",
+        "notice": "notice",
+        "health_record": "health_record",
+        "education_record": "education_record",
+        "agriculture_record": "agriculture_record",
+
         # Add more tables as needed
     }
     
@@ -691,15 +699,21 @@ def advanced_query_step1(request):
         
         # Define available columns for each selected table
         table_columns = {
+            'users' : ['user_id','username','password','email','phone','role','registration_date'],
+            'village' : ['village_id','village_name','district','state','population','area','pincode'],
             'citizen': ['citizen_id', 'user_id', 'village_id', 'name', 'house_number', 'aadhar_number', 'date_of_birth', 'gender', 'occupation'],
-            'village': ['village_id', 'village_name', 'district', 'state', 'pincode', 'population'],
-            'tax_record': ['tax_id', 'citizen_id', 'tax_type', 'amount', 'due_date', 'payment_date', 'payment_status', 'payment_method'],
+            'panchayat_employee': ['employee_id', 'user_id', 'name', 'designation', 'joining_date', 'department', 'education'],
+            'government_monitor': ['monitor_id', 'user_id', 'name', 'department', 'designation'],
+            'scheme': ['scheme_id', 'scheme_name','description','criteria' 'start_date', 'end_date', 'budget_allocated'],
+            'scheme_enrollment': ['enrollment_id', 'scheme_id','citizen_id','enrollment_date', 'status', 'benefit_amount'],
+            'complaint': ['complaint_id', 'citizen_id', 'complaint_type', 'description', 'complaint_date'],
             'certificate': ['certificate_id', 'citizen_id', 'certificate_type', 'issue_date', 'valid_until'],
-            'property': ['property_id', 'citizen_id', 'address', 'property_type', 'area', 'survey_number', 'registry_date', 'value'],
-            'complaint': ['complaint_id', 'citizen_id', 'complaint_type', 'description', 'complaint_date', 'status'],
-            'scheme': ['scheme_id', 'scheme_name', 'start_date', 'end_date', 'criteria', 'benefits'],
-            'users': ['user_id', 'username', 'email', 'phone', 'role', 'registration_date'],
-            # Add more table column definitions as needed
+            'tax_record': ['tax_id', 'citizen_id', 'tax_type', 'amount', 'due_date', 'payment_date', 'payment_status', 'payment_method'],
+            'property': ['property_id', 'citizen_id', 'property_type', 'address', 'area', 'survey_number', 'registry_date', 'value'],
+            'notice': ['notice_id', 'title', 'content', 'notice_date', 'expiry_date', 'employee_id'],
+            'health_record': ['health_id', 'village_id', 'record_date', 'healthcare_facilities', 'doctors', 'nurses','beds','patients_treated','vaccination_count'],
+            'education_record': ['education_id', 'village_id', 'record_date', 'schools', 'colleges', 'students','teachers','literacy_rate'],
+            'agriculture_record': ['agriculture_id', 'village_id', 'record_date', 'total_agricultural_land', 'irrigated_land', 'major_crops','farmers_count','subsidy_amount'],
         }
         
         # Create a dict of only the selected tables and their columns
@@ -732,18 +746,44 @@ def advanced_query_step2(request):
         for key, value in request.POST.items():
             # Check for display column selections
             if key.startswith('display_'):
-                # Format: display_table_column
-                parts = key.split('_', 2)
-                if len(parts) == 3:
-                    table, column = parts[1], parts[2]
+                # Remove the 'display_' prefix
+                remaining = key[8:]  # 'display_' is 8 characters
+                
+                # Find the last underscore which separates the column name
+                last_underscore_index = remaining.rfind('_')
+                
+                if last_underscore_index != -1:
+                    table = remaining[:last_underscore_index]
+                    column = remaining[last_underscore_index+1:]
+                    
+                    # Handle tables with underscores in their names
+                    for t in selected_tables:
+                        if remaining.startswith(t) and len(t) <= len(table):
+                            table = t
+                            column = remaining[len(t)+1:]  # +1 for the underscore
+                            break
+                    
                     display_columns.append(f"{table}.{column}")
             
             # Check for filter values
             elif key.startswith('filter_'):
-                # Format: filter_table_column
-                parts = key.split('_', 2)
-                if len(parts) == 3 and value.strip():
-                    table, column = parts[1], parts[2]
+                # Remove the 'filter_' prefix
+                remaining = key[7:]  # 'filter_' is 7 characters
+                
+                # Find the last underscore which separates the column name
+                last_underscore_index = remaining.rfind('_')
+                
+                if last_underscore_index != -1 and value.strip():
+                    table = remaining[:last_underscore_index]
+                    column = remaining[last_underscore_index+1:]
+                    
+                    # Handle tables with underscores in their names
+                    for t in selected_tables:
+                        if remaining.startswith(t) and len(t) <= len(table):
+                            table = t
+                            column = remaining[len(t)+1:]  # +1 for the underscore
+                            break
+                    
                     filters[f"{table}.{column}"] = value.strip()
         
         # Store in session for use in execute
@@ -779,7 +819,8 @@ def advanced_query_execute(request):
         else:
             # Use only the selected columns
             select_clause = "SELECT " + ", ".join(display_columns)
-        
+        print(select_clause)
+        print('1oxcv\n')
         # FROM clause with first table
         from_clause = f"FROM {selected_tables[0]}"
         
@@ -863,6 +904,7 @@ def advanced_query_execute(request):
         })
     
     except Exception as e:
+        # print('1000\n')
         messages.error(request, f"Query execution error: {str(e)}")
         return redirect('advanced_query_begin')
 
