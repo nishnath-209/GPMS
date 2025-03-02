@@ -49,17 +49,8 @@
                         <form method="POST" action="{% url 'ge_update' user_id=user_id %}">
                             {% csrf_token %}
 
-                            <!-- Success/Error Messages -->
-                            {% if messages %}
-                            {% for message in messages %}
-                            <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
-                                {{ message }}
-                            </div>
-                            {% endfor %}
-                            {% endif %}
-
                             <div class="mb-4">
-                                <label for="designation" class="form-label">username: {{username}}</label>
+                                <label for="designation" class="form-label">username: {{name}}</label>
                             </div>
 
                             <div class="mb-4">
