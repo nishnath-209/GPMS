@@ -116,6 +116,11 @@ def login_view(request):
             
             user = cursor.fetchone()
 
+            if not user:
+                return render(request, 'user/login_register.html', {'error': 'Username or Password is incorrect'})
+
+
+
             # Fetch citizen details using the user_id
             cursor.execute("""
                 SELECT * FROM citizen WHERE user_id = %s
@@ -147,7 +152,7 @@ def login_view(request):
                 #     return redirect('employee_home')  # Go to dashboard page
             else:
                 messages.error(request, 'Wrong username or password')
-                return redirect('login_register')
+                return redirect('user/login_register')
     
     return render(request, 'user/login_register.html')
 
@@ -173,6 +178,29 @@ def logout(request):
     
     # Redirect to the login page or home page
     return redirect('login_before')  # Or any other page you want to redirect to
+
+
+
+def delete_account(request):
+    user_id = request.session['user_id']
+
+    if not user_id:
+        return redirect('login')  # Redirect if user is not logged in
+
+    try:
+        with connection.cursor() as cursor:
+            # Delete user account
+            cursor.execute("DELETE FROM users WHERE user_id = %s", [user_id])
+
+        # Clear session and redirect after deletion
+        request.session.flush()
+        return redirect('login_before')
+
+    except Exception as e:
+        print(f"Error deleting account: {e}")
+        return redirect('dashboard')  # Redirect back in case of an error
+
+
 
 # Original dashboard function
 def dashboard(request):

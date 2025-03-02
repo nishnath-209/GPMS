@@ -47,6 +47,7 @@ urlpatterns = [
     path('education_record_admin/', views.education_record_admin, name='education_record_admin'),
     path('agriculture_record_admin/', views.agriculture_record_admin, name='agriculture_record_admin'),
     path('village_admin/',views.village_admin,name='village_admin'),
+    path('delete_account/',views.delete_account,name='delete_account'),
 ]
 
 

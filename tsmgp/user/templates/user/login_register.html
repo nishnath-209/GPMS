@@ -71,8 +71,8 @@
                                         placeholder="Password" />
                                     <label for="loginPassword">Password</label>
                                 </div>
-
-                                <!-- 2 column grid layout -->
+                                
+                                {% comment %} <!-- 2 column grid layout -->
                                 <div class="row mb-4">
                                     <div class="col-md-6 d-flex">
                                         <!-- Checkbox -->
@@ -87,10 +87,17 @@
                                         <!-- Simple link -->
                                         <a href="#!">Forgot password?</a>
                                     </div>
-                                </div>
+                                </div> {% endcomment %}
+                                
 
                                 <!-- Submit button -->
                                 <button type="submit" class="btn btn-primary btn-lg w-100 mb-4">Sign in</button>
+
+                                {% if error %}
+                                    <div class="alert alert-danger text-center" role="alert">
+                                        {{ error }}
+                                    </div>
+                                {% endif %}
 
                                 <!-- Social login -->
                                 <div class="text-center">
