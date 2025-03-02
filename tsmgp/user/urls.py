@@ -53,6 +53,8 @@ urlpatterns = [
     path('ge-update/<int:user_id>/', views.ge_update, name='ge_update'),
     path('pe-update/<int:user_id>/', views.pe_update, name='pe_update'),
     path('government_monitor_query/',views.government_monitor_query,name='government_monitor_query'),
+    path('employee_modify/',views.employee_modify,name = 'employee_modify'),
+    path('employee_delete/',views.employee_delete,name = 'employee_delete'),
 ]
 
 

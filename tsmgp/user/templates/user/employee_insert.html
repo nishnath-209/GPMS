@@ -3,21 +3,21 @@
 {% block content %}
 <div class="container-fluid mt-4">
     <h2 class="mb-4">Database Management</h2>
-    
+
     {% if success_message %}
     <div class="alert alert-success alert-dismissible fade show" role="alert">
         {{ success_message }}
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
     {% endif %}
-    
+
     {% if error_message %}
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
         {{ error_message }}
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
     {% endif %}
-    
+
     <div class="row">
         <!-- Left sidebar with table list -->
         <div class="col-md-3">
@@ -28,7 +28,8 @@
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush">
                         {% for table in tables %}
-                        <a href="?table={{ table }}" class="list-group-item list-group-item-action {% if selected_table == table %}active{% endif %}">
+                        <a href="?table={{ table }}"
+                            class="list-group-item list-group-item-action {% if selected_table == table %}active{% endif %}">
                             {{ table }}
                         </a>
                         {% endfor %}
@@ -36,7 +37,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Right side with table data and insert form -->
         <div class="col-md-9">
             {% if selected_table %}
@@ -49,7 +50,7 @@
                         {% csrf_token %}
                         <input type="hidden" name="table_name" value="{{ selected_table }}">
                         <input type="hidden" name="insert" value="true">
-                        
+
                         <div class="row">
                             {% for column in columns %}
                             {% if not column.is_primary_key %}
@@ -58,8 +59,14 @@
                                     {{ column.name }}
                                     {% if not column.is_nullable %}<span class="text-danger">*</span>{% endif %}
                                 </label>
-                                
-                                {% if column.data_type == 'boolean' %}
+
+                                {% if selected_table == 'users' and column.name == 'role' %}
+                                <!-- Special handling for 'role' field in 'users' table -->
+                                <input type="text" class="form-control" id="field_{{ column.name }}"
+                                    name="field_{{ column.name }}" value="citizen" readonly>
+                                <small class="text-muted">Fixed value for new users</small>
+
+                                {% elif column.data_type == 'boolean' %}
                                 <select class="form-select" id="field_{{ column.name }}" name="field_{{ column.name }}">
                                     <option value="true">True</option>
                                     <option value="false">False</option>
@@ -67,39 +74,44 @@
                                     <option value="">NULL</option>
                                     {% endif %}
                                 </select>
-                                
+
                                 {% elif column.data_type == 'date' %}
-                                <input type="date" class="form-control" id="field_{{ column.name }}" name="field_{{ column.name }}"
-                                       {% if not column.is_nullable %}required{% endif %}>
-                                
-                                {% elif column.data_type == 'timestamp' or column.data_type == 'timestamp without time zone' %}
-                                <input type="datetime-local" class="form-control" id="field_{{ column.name }}" name="field_{{ column.name }}"
-                                       {% if not column.is_nullable %}required{% endif %}>
-                                
-                                {% elif 'numeric' in column.data_type or 'int' in column.data_type or 'double' in column.data_type or 'float' in column.data_type %}
-                                <input type="number" class="form-control" id="field_{{ column.name }}" name="field_{{ column.name }}"
-                                       {% if not column.is_nullable %}required{% endif %}>
-                                
+                                <input type="date" class="form-control" id="field_{{ column.name }}"
+                                    name="field_{{ column.name }}" {% if not column.is_nullable %}required{% endif %}>
+
+                                {% elif column.data_type == 'timestamp' or column.data_type == 'timestamp without time
+                                zone' %}
+                                <input type="datetime-local" class="form-control" id="field_{{ column.name }}"
+                                    name="field_{{ column.name }}" {% if not column.is_nullable %}required{% endif %}>
+
+                                {% elif 'numeric' in column.data_type or 'int' in column.data_type or 'double' in
+                                column.data_type or 'float' in column.data_type %}
+                                <input type="number" class="form-control" id="field_{{ column.name }}"
+                                    name="field_{{ column.name }}" {% if not column.is_nullable %}required{% endif %}>
+
                                 {% else %}
-                                <input type="text" class="form-control" id="field_{{ column.name }}" name="field_{{ column.name }}"
-                                       {% if not column.is_nullable %}required{% endif %}>
+                                <input type="text" class="form-control" id="field_{{ column.name }}"
+                                    name="field_{{ column.name }}" {% if not column.is_nullable %}required{% endif %}>
                                 {% endif %}
-                                
+
+                                {% if selected_table != 'users' or column.name != 'role' %}
                                 {% if column.is_nullable %}
                                 <div class="form-check mt-1">
-                                    <input class="form-check-input" type="checkbox" id="null_{{ column.name }}" name="null_{{ column.name }}">
+                                    <input class="form-check-input" type="checkbox" id="null_{{ column.name }}"
+                                        name="null_{{ column.name }}">
                                     <label class="form-check-label" for="null_{{ column.name }}">
                                         Set as NULL
                                     </label>
                                 </div>
                                 {% endif %}
-                                
+                                {% endif %}
+
                                 <small class="text-muted">Type: {{ column.data_type }}</small>
                             </div>
                             {% endif %}
                             {% endfor %}
                         </div>
-                        
+
                         <div class="mt-3">
                             <button type="submit" class="btn btn-success">
                                 <i class="fas fa-save"></i> Save Record
@@ -108,7 +120,7 @@
                     </form>
                 </div>
             </div>
-            
+
             <!-- Table data -->
             <div class="card">
                 <div class="card-header bg-primary text-white">
@@ -156,14 +168,14 @@
 
 <script>
     // JavaScript to handle the "Set as NULL" checkbox
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const nullCheckboxes = document.querySelectorAll('input[type="checkbox"][id^="null_"]');
-        
+
         nullCheckboxes.forEach(checkbox => {
             const fieldName = checkbox.id.replace('null_', '');
             const inputField = document.getElementById('field_' + fieldName);
-            
-            checkbox.addEventListener('change', function() {
+
+            checkbox.addEventListener('change', function () {
                 if (this.checked) {
                     inputField.setAttribute('disabled', 'disabled');
                     inputField.removeAttribute('required');

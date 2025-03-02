@@ -1075,8 +1075,7 @@ def employee_insert(request):
         return redirect('login_register')
     
     tables = [
-        "users", "village", "citizen", "panchayat_employee", "government_monitor",
-        "scheme", "scheme_enrollment", "complaint", "certificate", "tax_record",
+        "scheme", "certificate", "tax_record",
         "property", "notice", "health_record", "education_record", "agriculture_record"
     ]
 
@@ -1231,6 +1230,444 @@ def employee_insert(request):
 
     return render(request, 'user/employee_insert.html', context)
 
+def employee_modify(request):
+    """Handle table viewing and data modification for employees"""
+    if 'user_id' not in request.session or request.session.get('role') != 'employee':
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('login_register')
+    
+    tables = [
+        "scheme", "scheme_enrollment", "complaint", "certificate", "tax_record",
+        "property", "notice", "health_record", "education_record", "agriculture_record"
+    ]
+
+    context = {
+        'tables': tables,
+        'selected_table': None,
+        'table_data': None,
+        'columns': None,
+        'primary_key_columns': None,
+        'primary_key_indices': None,
+        'success_message': None,
+        'error_message': None,
+        'editing': False,
+        'record_data': None,
+        'primary_key_values': None
+    }
+
+    # Register custom template filters
+    from django.template.defaulttags import register
+    
+    @register.filter
+    def get_item(obj, index):
+        if isinstance(obj, list) or isinstance(obj, tuple):
+            return obj[index] if 0 <= index < len(obj) else None
+        elif isinstance(obj, dict):
+            return obj.get(index)
+        return None
+
+    selected_table = request.GET.get('table')
+    if selected_table and selected_table in tables:
+        context['selected_table'] = selected_table
+        
+        try:
+            with connection.cursor() as cursor:
+                # Fetch primary keys dynamically
+                cursor.execute("""
+                    SELECT a.attname, a.attnum
+                    FROM pg_index i
+                    JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+                    WHERE i.indrelid = %s::regclass AND i.indisprimary
+                    ORDER BY a.attnum
+                """, [selected_table])
+
+                primary_keys = cursor.fetchall()
+                primary_key_columns = [pk[0] for pk in primary_keys]
+                primary_key_indices = [pk[1]-1 for pk in primary_keys]  # Adjust for 0-based indexing
+                
+                context['primary_key_columns'] = primary_key_columns
+                context['primary_key_indices'] = primary_key_indices
+
+                # Fetch column metadata
+                cursor.execute("""
+                    SELECT column_name, data_type, is_nullable, column_default 
+                    FROM information_schema.columns
+                    WHERE table_name = %s
+                    ORDER BY ordinal_position
+                """, [selected_table])
+
+                columns = []
+                for row in cursor.fetchall():
+                    columns.append({
+                        'name': row[0],
+                        'data_type': row[1],
+                        'is_nullable': row[2] == 'YES',
+                        'default': row[3],
+                        'is_primary_key': row[0] in primary_key_columns
+                    })
+
+                context['columns'] = columns
+
+                # Fetch table data
+                cursor.execute(f"SELECT * FROM {selected_table} LIMIT 100")
+                context['table_data'] = cursor.fetchall()
+
+                # Check if we're editing a specific record
+                if request.GET.get('edit') == 'true' and all(f'pk_{pk}' in request.GET for pk in primary_key_columns):
+                    context['editing'] = True
+                    
+                    # Get primary key values
+                    pk_values = []
+                    where_clauses = []
+                    for pk in primary_key_columns:
+                        pk_value = request.GET.get(f'pk_{pk}')
+                        pk_values.append(pk_value)
+                        where_clauses.append(f"{pk} = %s")
+                    
+                    context['primary_key_values'] = pk_values
+                    
+                    # Fetch the specific record
+                    where_sql = " AND ".join(where_clauses)
+                    query = f"SELECT * FROM {selected_table} WHERE {where_sql}"
+                    
+                    cursor.execute(query, pk_values)
+                    record = cursor.fetchone()
+                    
+                    if record:
+                        context['record_data'] = record
+                    else:
+                        context['error_message'] = "Record not found."
+                        context['editing'] = False
+
+        except Exception as e:
+            context['error_message'] = f"Error retrieving table data: {str(e)}"
+
+    # Handle form submission (update)
+    if request.method == 'POST' and 'update' in request.POST:
+        table_name = request.POST.get('table_name')
+        if table_name not in tables:
+            context['error_message'] = "Invalid table selected"
+            return render(request, 'user/employee_modify.html', context)
+
+        try:
+            with connection.cursor() as cursor:
+                # Fetch primary keys again (for validation)
+                cursor.execute("""
+                    SELECT a.attname
+                    FROM pg_index i
+                    JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+                    WHERE i.indrelid = %s::regclass AND i.indisprimary
+                    ORDER BY a.attnum
+                """, [table_name])
+                
+                primary_keys = [row[0] for row in cursor.fetchall()]
+                
+                # Get primary key values (for WHERE clause)
+                pk_values = []
+                where_clauses = []
+                for pk in primary_keys:
+                    pk_value = request.POST.get(f'pk_{pk}')
+                    pk_values.append(pk_value)
+                    where_clauses.append(f"{pk} = %s")
+                
+                # Collect form data for update
+                form_data = {}
+                for key, value in request.POST.items():
+                    if key.startswith('field_'):
+                        field_name = key[6:]
+                        if request.POST.get(f'null_{field_name}') == 'on':
+                            form_data[field_name] = None
+                        else:
+                            if value.strip() or value == 'false':
+                                form_data[field_name] = value
+
+                # Remove primary keys from update data
+                form_data = {k: v for k, v in form_data.items() if k not in primary_keys}
+
+                if not form_data:
+                    raise Exception("No valid form data submitted")
+
+                # Build UPDATE query
+                set_clauses = []
+                update_values = []
+                
+                for field, value in form_data.items():
+                    set_clauses.append(f"{field} = %s")
+                    update_values.append(value)
+                
+                # Add WHERE values to the parameter list
+                update_values.extend(pk_values)
+                
+                where_sql = " AND ".join(where_clauses)
+                set_sql = ", ".join(set_clauses)
+                
+                query = f"UPDATE {table_name} SET {set_sql} WHERE {where_sql}"
+                cursor.execute(query, update_values)
+
+                context['success_message'] = "Record updated successfully!"
+                context['selected_table'] = table_name
+                context['editing'] = False
+
+                # Refresh table data
+                cursor.execute(f"SELECT * FROM {table_name} LIMIT 100")
+                context['table_data'] = cursor.fetchall()
+
+                # Refresh column metadata
+                cursor.execute("""
+                    SELECT column_name, data_type, is_nullable, column_default 
+                    FROM information_schema.columns
+                    WHERE table_name = %s
+                    ORDER BY ordinal_position
+                """, [table_name])
+
+                columns = []
+                for row in cursor.fetchall():
+                    columns.append({
+                        'name': row[0],
+                        'data_type': row[1],
+                        'is_nullable': row[2] == 'YES',
+                        'default': row[3],
+                        'is_primary_key': row[0] in primary_keys
+                    })
+
+                context['columns'] = columns
+                context['primary_key_columns'] = primary_keys
+                
+                # Fetch primary key indices
+                cursor.execute("""
+                    SELECT a.attname, a.attnum
+                    FROM pg_index i
+                    JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+                    WHERE i.indrelid = %s::regclass AND i.indisprimary
+                    ORDER BY a.attnum
+                """, [table_name])
+                
+                primary_key_indices = [pk[1]-1 for pk in cursor.fetchall()]
+                context['primary_key_indices'] = primary_key_indices
+
+        except Exception as e:
+            context['error_message'] = f"Error updating data: {str(e)}"
+            context['selected_table'] = table_name
+            
+            # Re-fetch primary keys and columns to ensure consistent state
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("""
+                        SELECT a.attname
+                        FROM pg_index i
+                        JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+                        WHERE i.indrelid = %s::regclass AND i.indisprimary
+                        ORDER BY a.attnum
+                    """, [table_name])
+                    
+                    primary_keys = [row[0] for row in cursor.fetchall()]
+                    context['primary_key_columns'] = primary_keys
+                    
+                    # Fetch column metadata
+                    cursor.execute("""
+                        SELECT column_name, data_type, is_nullable, column_default 
+                        FROM information_schema.columns
+                        WHERE table_name = %s
+                        ORDER BY ordinal_position
+                    """, [table_name])
+
+                    columns = []
+                    for row in cursor.fetchall():
+                        columns.append({
+                            'name': row[0],
+                            'data_type': row[1],
+                            'is_nullable': row[2] == 'YES',
+                            'default': row[3],
+                            'is_primary_key': row[0] in primary_keys
+                        })
+
+                    context['columns'] = columns
+            except:
+                pass
+
+    return render(request, 'user/employee_modify.html', context)
+
+def employee_delete(request):
+    """Handle record deletion for employees"""
+    if 'user_id' not in request.session or request.session.get('role') != 'employee':
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('login_register')
+    
+    tables = [
+        "scheme", "certificate", "tax_record",
+        "property", "notice", "health_record", "education_record", "agriculture_record"
+    ]
+
+    context = {
+        'tables': tables,
+        'selected_table': None,
+        'table_data': None,
+        'columns': None,
+        'primary_keys': None,
+        'success_message': None,
+        'error_message': None
+    }
+
+    selected_table = request.GET.get('table')
+    if selected_table and selected_table in tables:
+        context['selected_table'] = selected_table
+        
+        try:
+            with connection.cursor() as cursor:
+                # Fetch primary keys dynamically
+                cursor.execute("""
+                    SELECT a.attname
+                    FROM pg_index i
+                    JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+                    WHERE i.indrelid = %s::regclass AND i.indisprimary
+                """, [selected_table])
+
+                primary_keys = [row[0] for row in cursor.fetchall()]  # Get actual primary key(s)
+                context['primary_keys'] = primary_keys
+
+                # Fetch column metadata
+                cursor.execute("""
+                    SELECT column_name, data_type, is_nullable, column_default 
+                    FROM information_schema.columns
+                    WHERE table_name = %s
+                    ORDER BY ordinal_position
+                """, [selected_table])
+
+                columns = []
+                for row in cursor.fetchall():
+                    columns.append({
+                        'name': row[0],
+                        'data_type': row[1],
+                        'is_nullable': row[2] == 'YES',
+                        'default': row[3],
+                        'is_primary_key': row[0] in primary_keys  # Correctly mark primary keys
+                    })
+
+                context['columns'] = columns
+
+                # Fetch table data
+                cursor.execute(f"SELECT * FROM {selected_table} LIMIT 100")
+                context['table_data'] = cursor.fetchall()
+
+        except Exception as e:
+            context['error_message'] = f"Error retrieving table data: {str(e)}"
+
+    # Handle delete operation
+    if request.method == 'POST' and 'delete' in request.POST:
+        table_name = request.POST.get('table_name')
+        
+        if table_name not in tables:
+            context['error_message'] = "Invalid table selected"
+            return render(request, 'user/employee_delete.html', context)
+
+        try:
+            with connection.cursor() as cursor:
+                # Get primary key(s) for the table
+                cursor.execute("""
+                    SELECT a.attname
+                    FROM pg_index i
+                    JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+                    WHERE i.indrelid = %s::regclass AND i.indisprimary
+                """, [table_name])
+                
+                primary_keys = [row[0] for row in cursor.fetchall()]
+                
+                if not primary_keys:
+                    raise Exception("No primary key found for this table")
+                
+                # Build WHERE clause with all primary keys
+                where_conditions = []
+                values = []
+                
+                for pk in primary_keys:
+                    pk_value = request.POST.get(f'pk_{pk}')
+                    if pk_value is None:
+                        raise Exception(f"Missing primary key value for {pk}")
+                    
+                    where_conditions.append(f"{pk} = %s")
+                    values.append(pk_value)
+                
+                where_clause = " AND ".join(where_conditions)
+                
+                # Execute DELETE query
+                query = f"DELETE FROM {table_name} WHERE {where_clause}"
+                cursor.execute(query, values)
+                
+                # Check if any rows were actually deleted
+                if cursor.rowcount > 0:
+                    context['success_message'] = "Record deleted successfully!"
+                else:
+                    context['error_message'] = "No matching record found to delete"
+                
+                # Refresh table data
+                cursor.execute(f"SELECT * FROM {table_name} LIMIT 100")
+                context['table_data'] = cursor.fetchall()
+                context['selected_table'] = table_name
+                context['primary_keys'] = primary_keys
+                
+                # Refresh column metadata
+                cursor.execute("""
+                    SELECT column_name, data_type, is_nullable, column_default 
+                    FROM information_schema.columns
+                    WHERE table_name = %s
+                    ORDER BY ordinal_position
+                """, [table_name])
+
+                columns = []
+                for row in cursor.fetchall():
+                    columns.append({
+                        'name': row[0],
+                        'data_type': row[1],
+                        'is_nullable': row[2] == 'YES',
+                        'default': row[3],
+                        'is_primary_key': row[0] in primary_keys
+                    })
+
+                context['columns'] = columns
+                
+        except Exception as e:
+            context['error_message'] = f"Error deleting record: {str(e)}"
+            
+            # Re-fetch column metadata
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("""
+                        SELECT a.attname
+                        FROM pg_index i
+                        JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+                        WHERE i.indrelid = %s::regclass AND i.indisprimary
+                    """, [table_name])
+                    
+                    primary_keys = [row[0] for row in cursor.fetchall()]
+                    context['primary_keys'] = primary_keys
+                    
+                    cursor.execute("""
+                        SELECT column_name, data_type, is_nullable, column_default 
+                        FROM information_schema.columns
+                        WHERE table_name = %s
+                        ORDER BY ordinal_position
+                    """, [table_name])
+
+                    columns = []
+                    for row in cursor.fetchall():
+                        columns.append({
+                            'name': row[0],
+                            'data_type': row[1],
+                            'is_nullable': row[2] == 'YES',
+                            'default': row[3],
+                            'is_primary_key': row[0] in primary_keys
+                        })
+
+                    context['columns'] = columns
+                    
+                    # Refresh table data
+                    cursor.execute(f"SELECT * FROM {table_name} LIMIT 100")
+                    context['table_data'] = cursor.fetchall()
+                    context['selected_table'] = table_name
+            except:
+                pass
+
+    return render(request, 'user/employee_delete.html', context)
 
 
 
