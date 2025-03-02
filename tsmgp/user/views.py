@@ -125,16 +125,16 @@ def login_view(request):
                 request.session['email'] = user[2]
                 request.session['phone'] = user[3]
                 request.session['role'] = user[4]
-                return redirect('home')
+                # return redirect('home')
                 
-                # if user[4] == 'citizen':
-                #     return redirect('citizen_home')
-                # elif user[4] == 'gm':
-                #     return redirect('government_monitors')
-                # elif user[4] == 'admin':
-                #     return redirect('admin')
-                # else:
-                #     return redirect('employee_home')  # Go to dashboard page
+                if user[4] == 'citizen':
+                    return redirect('citizen_home')
+                elif user[4] == 'gm':
+                    return redirect('government_monitors')
+                elif user[4] == 'admin':
+                    return redirect('admin_home')
+                else:
+                    return redirect('employee_home')  # Go to dashboard page
             else:
                 messages.error(request, 'Wrong username or password')
                 return redirect('login_register')
@@ -356,6 +356,7 @@ def add_complaint(request):
         return redirect("dashboard")
 
 
+
 @csrf_exempt
 def remove_complaint(request):
     """Handle removing a complaint."""
@@ -371,6 +372,25 @@ def remove_complaint(request):
     return JsonResponse({"success": False}, status=400)
 
 
+<<<<<<< HEAD
+=======
+
+def view_notices(request):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT notice_id, title, content, notice_date, expiry_date FROM NOTICE ORDER BY notice_date DESC;")
+        notices = cursor.fetchall()
+
+    # Convert the result into a list of dictionaries for easier template rendering
+    notice_list = [
+        {'notice_id': row[0], 'title': row[1], 'content': row[2], 'notice_date': row[3], 'expiry_date': row[4]}
+        for row in notices
+    ]
+
+    return render(request, 'user/notices.html', {'notices': notice_list})
+
+
+
+>>>>>>> 616f8b516e1e560df4f33c235387437099766e92
 def view_village_info(request, user_id):
     with connection.cursor() as cursor:
         # Get citizen_id and village_id
