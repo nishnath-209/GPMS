@@ -34,7 +34,10 @@ def citizen_home(request):
     return render(request, 'user/citizen_home.html')
 
 def home_view(request):
-    print(request.session['role'])
+    #print(request.session['role'])
+    role = request.session.get("role")
+    if not role:
+        return redirect('login_before')
     if request.session['role'] == 'citizen':
         return redirect('citizen_home')
     elif request.session['role'] == 'government_monitor':
@@ -332,7 +335,7 @@ def dashboard(request):
             
             # Get property records
             cursor.execute("""
-                SELECT address as name, property_type, area, survey_number as survey_num, 
+                SELECT address as name, property_type, p_area, survey_number as survey_num, 
                        registry_date as registration_date, value
                 FROM PROPERTY
                 WHERE citizen_id = %s
