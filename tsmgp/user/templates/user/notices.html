@@ -22,10 +22,12 @@
     {% else %}
         <p class="text-center text-muted">No notices available.</p>
     {% endif %}
-
+     
+    {% if role in 'employee' %}
     <div class="text-center mb-3">
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addNoticeModal">Add Notice</button>
     </div>
+    {% endif %}
 
     <div class="modal fade" id="addNoticeModal" tabindex="-1" aria-labelledby="addNoticeModalLabel" aria-hidden="true">
         <div class="modal-dialog">

@@ -461,9 +461,11 @@ def view_notices(request):
         {'notice_id': row[0], 'title': row[1], 'content': row[2], 'notice_date': row[3], 'expiry_date': row[4]}
         for row in notices
     ]
+    role = request.session.get("role")
 
-    return render(request, 'user/notices.html', {'notices': notice_list})
+    return render(request, 'user/notices.html', {'notices': notice_list,'role':role})
 
+    
 def add_notice(request):
     if request.method == "POST":
         title = request.POST.get('title')
@@ -1578,7 +1580,7 @@ def employee_delete(request):
                 # Build WHERE clause with all primary keys
                 where_conditions = []
                 values = []
-                
+                print(primary_keys)
                 for pk in primary_keys:
                     pk_value = request.POST.get(f'pk_{pk}')
                     if pk_value is None:
