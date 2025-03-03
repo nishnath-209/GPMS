@@ -76,11 +76,17 @@ WSGI_APPLICATION = 'tsmgp.wsgi.application'
 
 DATABASES = {
     'default': {
+        # 'ENGINE': 'django.db.backends.postgresql',
+        # 'NAME': 'postgres',
+        # 'USER': 'postgres',
+        # 'PASSWORD': 'pvthemonster18',
+        # 'HOST': '10.145.116.253',  # typically 'localhost' or '127.0.0.1'
+        # 'PORT': '5432',  # typically '5432'
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres',
-        'PASSWORD': 'pvthemonster18',
-        'HOST': '10.145.116.253',  # typically 'localhost' or '127.0.0.1'
+        'NAME': '22CS10044',
+        'USER': '22CS10044',
+        'PASSWORD': '22CS10044',
+        'HOST': '10.5.18.70',  # typically 'localhost' or '127.0.0.1'
         'PORT': '5432',  # typically '5432'
     }
 }
