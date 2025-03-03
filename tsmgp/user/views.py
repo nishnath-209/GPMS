@@ -757,13 +757,20 @@ def employee_query(request):
             
         # Define allowed tables and their fields for security
         allowed_tables = {
+            'village' : ['village_id','village_name','district','state','population','area','pincode'],
             'citizen': ['citizen_id', 'user_id', 'village_id', 'name', 'house_number', 'aadhar_number', 'date_of_birth', 'gender', 'occupation'],
-            'village': ['village_id', 'village_name', 'district', 'state', 'pincode', 'population'],
-            'tax_record': ['tax_id', 'citizen_id', 'tax_type', 'amount', 'due_date', 'payment_date', 'payment_status', 'payment_method'],
+            'panchayat_employee': ['employee_id', 'user_id', 'name', 'designation', 'joining_date', 'department', 'education'],
+            'government_monitor': ['monitor_id', 'user_id', 'name', 'department', 'designation'],
+            'scheme': ['scheme_id', 'scheme_name','description','criteria','start_date', 'end_date', 'budget_allocated'],
+            'scheme_enrollment': ['enrollment_id', 'scheme_id','citizen_id','enrollment_date', 'status', 'benefit_amount'],
+            'complaint': ['complaint_id', 'citizen_id', 'complaint_type', 'description', 'complaint_date'],
             'certificate': ['certificate_id', 'citizen_id', 'certificate_type', 'issue_date', 'valid_until'],
-            'property': ['property_id', 'citizen_id', 'address', 'property_type', 'area', 'survey_number', 'registry_date', 'value'],
-            'complaint': ['complaint_id', 'citizen_id', 'complaint_type', 'description', 'complaint_date', 'status'],
-            'scheme': ['scheme_id', 'scheme_name', 'start_date', 'end_date', 'criteria', 'benefits']
+            'tax_record': ['tax_id', 'citizen_id', 'tax_type', 'amount', 'due_date', 'payment_date', 'payment_status', 'payment_method'],
+            'property': ['property_id', 'citizen_id', 'property_type', 'address', 'p_area', 'survey_number', 'registry_date', 'value'],
+            'notice': ['notice_id', 'title', 'content', 'notice_date', 'expiry_date', 'employee_id'],
+            'health_record': ['health_id', 'village_id', 'record_date', 'healthcare_facilities', 'doctors', 'nurses','beds','patients_treated','vaccination_count'],
+            'education_record': ['education_id', 'village_id', 'record_date', 'schools', 'colleges', 'students','teachers','literacy_rate'],
+            'agriculture_record': ['agriculture_id', 'village_id', 'record_date', 'total_agricultural_land', 'irrigated_land', 'major_crops','farmers_count','subsidy_amount'],
         }
         
         # Validate comparison operator
@@ -818,7 +825,7 @@ def advanced_query_begin(request):
     """Initial entry point for advanced query - shows table selection form"""
     # Get all available tables for selection
     tables = {
-        "users": "users",
+        # "users": "users",
         "village": "village",
         "citizen": "citizen",
         "panchayat_employee": "panchayat_employee",
@@ -864,17 +871,17 @@ def advanced_query_step1(request):
         
         # Define available columns for each selected table
         table_columns = {
-            'users' : ['user_id','username','password','email','phone','role','registration_date'],
+            # 'users' : ['user_id','username','password','email','phone','role','registration_date'],
             'village' : ['village_id','village_name','district','state','population','area','pincode'],
             'citizen': ['citizen_id', 'user_id', 'village_id', 'name', 'house_number', 'aadhar_number', 'date_of_birth', 'gender', 'occupation'],
             'panchayat_employee': ['employee_id', 'user_id', 'name', 'designation', 'joining_date', 'department', 'education'],
             'government_monitor': ['monitor_id', 'user_id', 'name', 'department', 'designation'],
-            'scheme': ['scheme_id', 'scheme_name','description','criteria' 'start_date', 'end_date', 'budget_allocated'],
+            'scheme': ['scheme_id', 'scheme_name','description','criteria','start_date', 'end_date', 'budget_allocated'],
             'scheme_enrollment': ['enrollment_id', 'scheme_id','citizen_id','enrollment_date', 'status', 'benefit_amount'],
             'complaint': ['complaint_id', 'citizen_id', 'complaint_type', 'description', 'complaint_date'],
             'certificate': ['certificate_id', 'citizen_id', 'certificate_type', 'issue_date', 'valid_until'],
             'tax_record': ['tax_id', 'citizen_id', 'tax_type', 'amount', 'due_date', 'payment_date', 'payment_status', 'payment_method'],
-            'property': ['property_id', 'citizen_id', 'property_type', 'address', 'area', 'survey_number', 'registry_date', 'value'],
+            'property': ['property_id', 'citizen_id', 'property_type', 'address', 'p_area', 'survey_number', 'registry_date', 'value'],
             'notice': ['notice_id', 'title', 'content', 'notice_date', 'expiry_date', 'employee_id'],
             'health_record': ['health_id', 'village_id', 'record_date', 'healthcare_facilities', 'doctors', 'nurses','beds','patients_treated','vaccination_count'],
             'education_record': ['education_id', 'village_id', 'record_date', 'schools', 'colleges', 'students','teachers','literacy_rate'],
@@ -994,8 +1001,7 @@ def advanced_query_execute(request):
         else:
             # Use only the selected columns
             select_clause = "SELECT " + ", ".join(display_columns)
-        print(select_clause)
-        print('1oxcv\n')
+        # print(select_clause)
         # FROM clause with first table
         from_clause = f"FROM {selected_tables[0]}"
         
