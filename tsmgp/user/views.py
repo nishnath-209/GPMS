@@ -465,7 +465,7 @@ def view_notices(request):
 
     return render(request, 'user/notices.html', {'notices': notice_list,'role':role})
 
-    
+
 def add_notice(request):
     if request.method == "POST":
         title = request.POST.get('title')
@@ -728,8 +728,6 @@ def employee_home(request):
     return render(request,'user/employee_home.html')
 
 
-# Add this to your existing views.py file (keep all existing code)
-
 def employee_query(request):
     """Handle database queries from employees"""
     context = {
@@ -747,6 +745,7 @@ def employee_query(request):
     if request.method == 'POST':
         table_selection = request.POST.get('table_selection')
         filter_field = request.POST.get('filter_field')
+        comparison_operator = request.POST.get('comparison_operator', '=')  # Default to = if not provided
         filter_value = request.POST.get('filter_value')
         limit = int(request.POST.get('limit', 100))
         
@@ -767,6 +766,12 @@ def employee_query(request):
             'scheme': ['scheme_id', 'scheme_name', 'start_date', 'end_date', 'criteria', 'benefits']
         }
         
+        # Validate comparison operator
+        allowed_operators = ['=', '<', '>', '<=', '>=']
+        if comparison_operator not in allowed_operators:
+            context['error_message'] = "Invalid comparison operator"
+            return render(request, 'user/employee_query.html', context)
+        
         # Validate inputs
         if table_selection not in allowed_tables:
             context['error_message'] = "Invalid table selection"
@@ -783,7 +788,7 @@ def employee_query(request):
                 params = []
                 
                 if filter_field and filter_value:
-                    query += f" WHERE {filter_field} = %s"
+                    query += f" WHERE {filter_field} {comparison_operator} %s"
                     params.append(filter_value)
                     
                 query += f" LIMIT {limit}"
@@ -805,8 +810,6 @@ def employee_query(request):
             context['error_message'] = f"Query error: {str(e)}"
             
     return render(request, 'user/employee_query.html', context)
-
-
 # Add these updated functions to your views.py file
 
 # Add these updated functions to your views.py file
@@ -900,8 +903,9 @@ def advanced_query_step2(request):
         return redirect('advanced_query_begin')
     
     if request.method == "POST":
-        # Initialize containers for filters and display columns
+        # Initialize containers for filters, operators, and display columns
         filters = {}
+        operators = {}
         display_columns = []
         
         # Process the form data
@@ -946,10 +950,18 @@ def advanced_query_step2(request):
                             column = remaining[len(t)+1:]  # +1 for the underscore
                             break
                     
-                    filters[f"{table}.{column}"] = value.strip()
+                    # Store the filter value
+                    full_column = f"{table}.{column}"
+                    filters[full_column] = value.strip()
+                    
+                    # Also get the operator for this filter from the POST data
+                    operator_key = f"operator_{table}_{column}"
+                    operator_value = request.POST.get(operator_key, '=')  # Default to = if not found
+                    operators[full_column] = operator_value
         
         # Store in session for use in execute
         request.session['filters'] = filters
+        request.session['operators'] = operators  # Store operators in session
         request.session['display_columns'] = display_columns
         request.session.modified = True  # Ensure session is saved
         
@@ -964,6 +976,7 @@ def advanced_query_execute(request):
     # Get data from session
     selected_tables = request.session.get('selected_tables', [])
     filters = request.session.get('filters', {})
+    operators = request.session.get('operators', {})  # Get operators from session
     display_columns = request.session.get('display_columns', [])
     
     if not selected_tables:
@@ -1031,11 +1044,22 @@ def advanced_query_execute(request):
                 
                 joined_tables.add(table_to_join)
         
-        # Build the WHERE clause for filters
+        # Build the WHERE clause for filters with their respective operators
         where_clauses = []
         params = []
+        
+        # Allowed operators for security
+        allowed_operators = ['=', '>', '>=', '<', '<=']
+        
         for filter_col, filter_val in filters.items():
-            where_clauses.append(f"{filter_col} = %s")
+            # Get the operator for this filter
+            operator = operators.get(filter_col, '=')  # Default to = if not found
+            
+            # Validate operator for security
+            if operator not in allowed_operators:
+                operator = '='  # Default to = if invalid
+            
+            where_clauses.append(f"{filter_col} {operator} %s")
             params.append(filter_val)
         
         # Assemble the complete query
